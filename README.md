@@ -1,2 +1,2 @@
 # entity
-An associative tree which allows recursive traversal of all elements.
+An associative tree which allows for controlled recursive traversal of all elements.
