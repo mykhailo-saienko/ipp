@@ -14,6 +14,13 @@ import java.util.stream.Stream;
 
 import ms.ipp.base.KeyValue;
 
+/**
+ * A collection of routines that manipulate Java class related to functional
+ * programming, such as Function, Predicate, Operator, Consumer, Supplier, etc.
+ * 
+ * @author mykhailo.saienko
+ *
+ */
 public class Algorithms {
 	/// **** Function concatenators **** ///
 
