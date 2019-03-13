@@ -38,12 +38,6 @@ public abstract class AbstractTree<F> implements Tree<F> {
 		updaters = new HashMap<>();
 	}
 
-	/**
-	 * Null removes the updater
-	 * 
-	 * @param key
-	 * @param updater
-	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T extends F> void setUpdater(Class<T> key, BiConsumer<? extends F, T> updater) {

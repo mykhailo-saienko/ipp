@@ -19,23 +19,77 @@ import ms.ipp.iterator.FilteredIterator;
 import ms.ipp.iterator.NestedIterator;
 import ms.ipp.iterator.OneIterator;
 
+/**
+ * The API for all Tree-like structures. Its main features are:
+ * <li>The iterative structure (extends Iterable and offers routines for
+ * iterating non-recursively) TODO: Proceed
+ * <li>The recursive structure, i.e., a collection of routines for recursively
+ * iterating over all elements in the structure (i.e., iterating over the
+ * elements, the elements' elements, etc.). An element is recognised to have
+ * children if it implements the interface Tree.
+ * <li>The associative structure allowing to effectively search for members by
+ * their names.
+ * 
+ * Both structures are compatible with each other, as there are manipulation
+ * methods for retrieving, setting or deleting elements by their full paths
+ * within the recursive structure (rather than just their names as elements of
+ * the Tree). How these paths are interpreted depends on the
+ * {@link PathManipulator} that the Tree is equipped with.
+ * 
+ * @author mykhailo.saienko
+ *
+ * @param <F> The superclass that all elements stored on the root-level of this
+ *        Tree must extend. The elements further down in the hierarchy, i.e.,
+ *        elements of the Tree's children are not required to be of type
+ *        <b>F</b>.
+ */
 public interface Tree<F> extends BiIterable<String, F> {
-	Class<F> getBaseClass();
-
-	PathManipulator getPathManipulator();
-
-	Recursion getRecursion();
-
-	<T extends F> void setUpdater(Class<T> key, BiConsumer<? extends F, T> updater);
+	/// ************ Metadata Manipulation ************ ///
 
 	/**
-	 * Sets a member with a given name to a given value. If a given member cannot be
-	 * found, reset or added, null is returned. <br>
+	 * Returns the Class-object of the template-parameter F. This is mostly used to
+	 * check for compatibility of an input object at run-time.
+	 * 
+	 * @return
+	 */
+	Class<F> getBaseClass();
+
+	/**
+	 * Returns the {@link PathManipulator} used to break the path into single levels
+	 * while recursively searching for elements by their path.
+	 * 
+	 * @return
+	 */
+	PathManipulator getPathManipulator();
+
+	/**
+	 * TODO: Proceed (don't forget the class comment: Iterative, Recursive,
+	 * Associative)
+	 * 
+	 * @return
+	 */
+	Recursion getRecursion();
+
+	/**
+	 * Null removes the updater
+	 * 
+	 * @param key
+	 * @param updater
+	 */
+	<T extends F> void setUpdater(Class<T> key, BiConsumer<? extends F, T> updater);
+
+	/// ************ (Recursive) iteration ************* ///
+
+	///
+	/**
+	 * Sets a member with a given name to a given value. If the member with a given
+	 * name cannot be found, reset or added, null is returned. <br>
 	 * <b>NOTE:</b> Null-values are not accepted. If a given value is null, an
 	 * {@link IllegalArgumentException} is thrown.
 	 * 
 	 * @param name
 	 * @param value
+	 * @param clazz
 	 * @return
 	 */
 	<T> T set(String name, T value, Class<T> clazz);
@@ -47,6 +101,7 @@ public interface Tree<F> extends BiIterable<String, F> {
 	 * value).
 	 * 
 	 * @param name
+	 * @param value
 	 * @return
 	 */
 	void delete(String name, Object value);
@@ -187,11 +242,13 @@ class TreeHelper {
 
 	static <T, U> U processMember(Tree<?> source, String name, Function<String, U> doProcessor,
 			BiFunction<Tree<?>, String, U> recursiveProcessor, U onError) {
-		PathManipulator manipulator = source.getPathManipulator();
-		Recursion recursion = source.getRecursion();
 		if (name == null || name.isEmpty()) {
 			return onError;
-		} else if (recursion == Recursion.FLAT || manipulator.isSimple(name)) {
+		}
+
+		PathManipulator manipulator = source.getPathManipulator();
+		Recursion recursion = source.getRecursion();
+		if (recursion == Recursion.FLAT || manipulator.isSimple(name)) {
 			return doProcessor.apply(name);
 		}
 		// we are sure that the name is not simple -> there must be a member
