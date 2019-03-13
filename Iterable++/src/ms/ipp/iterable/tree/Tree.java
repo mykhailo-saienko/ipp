@@ -1,8 +1,8 @@
 package ms.ipp.iterable.tree;
 
 import static ms.ipp.Iterables.toBiIt;
-import static ms.ipp.iterable.tree.EntityHelper.castIterator;
-import static ms.ipp.iterable.tree.EntityHelper.recursiveHead;
+import static ms.ipp.iterable.tree.TreeHelper.castIterator;
+import static ms.ipp.iterable.tree.TreeHelper.recursiveHead;
 import static ms.ipp.iterator.NestedIterator.combined;
 
 import java.util.Iterator;
@@ -167,7 +167,7 @@ public interface Tree<F> extends BiIterable<String, F> {
 	}
 }
 
-class EntityHelper {
+class TreeHelper {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	static <T, U> Iterator<Entry<String, U>> castIterator(Iterator<Entry<String, T>> it, Class<T> source,

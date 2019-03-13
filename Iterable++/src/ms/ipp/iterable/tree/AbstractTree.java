@@ -2,7 +2,7 @@ package ms.ipp.iterable.tree;
 
 import static ms.ipp.Algorithms.toFunc;
 import static ms.ipp.Iterables.removeFrom;
-import static ms.ipp.iterable.tree.EntityHelper.processMember;
+import static ms.ipp.iterable.tree.TreeHelper.processMember;
 
 import java.util.HashMap;
 import java.util.Map;
