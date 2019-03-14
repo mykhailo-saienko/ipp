@@ -21,7 +21,7 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 	}
 
 	private final Function<String, F> retriever;
-	private BiIterable<String, F> forEach;
+	private BiIterable<String, F> iterable;
 	private Predicate<String> deleter;
 	private Setter<F> setter;
 
@@ -42,7 +42,7 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 	/**
 	 * 
 	 * @param retriever
-	 * @param forEach
+	 * @param iterable
 	 * @param clazz
 	 */
 	public SyntheticTree(Function<String, F> retriever, Class<F> clazz) {
@@ -52,11 +52,11 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 	public SyntheticTree(Function<String, F> retriever, Iterable<Entry<String, F>> itGen, Class<F> clazz) {
 		super(clazz);
 		this.retriever = retriever;
-		this.setIterator(itGen);
+		this.setIterable(itGen);
 	}
 
-	public SyntheticTree<F> setIterator(Iterable<Entry<String, F>> itGen) {
-		this.forEach = Iterables.toBiIt(itGen);
+	public SyntheticTree<F> setIterable(Iterable<Entry<String, F>> itGen) {
+		this.iterable = Iterables.toBiIt(itGen);
 		return this;
 	}
 
@@ -67,7 +67,7 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 
 	@Override
 	public Iterator<Entry<String, F>> iterator() {
-		return forEach.iterator();
+		return iterable.iterator();
 	}
 
 	@Override

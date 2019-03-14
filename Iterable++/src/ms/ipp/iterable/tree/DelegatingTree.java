@@ -27,7 +27,7 @@ public class DelegatingTree<F> extends AbstractTree<F> {
 	}
 
 	@Override
-	public <T extends F> void setUpdater(Class<T> key, BiConsumer<? extends F, T> updater) {
+	public <T extends F> void setUpdater(Class<T> key, BiConsumer<T, T> updater) {
 		super.setUpdater(key, updater);
 		for (Entry<Class<?>, Tree<F>> d : delegates) {
 			d.getValue().setUpdater(key, updater);

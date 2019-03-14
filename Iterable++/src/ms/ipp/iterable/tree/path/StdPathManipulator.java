@@ -7,69 +7,62 @@ import java.util.List;
 
 import ms.ipp.base.KeyValue;
 
-public class StdPathManipulator implements PathManipulator {
+public class StdPathManipulator extends AbstractPathManipulator {
 
-	private final char separator;
-
-	public static int nextSep(String fullName, boolean first, char separator, int fromIndex) {
-		return first ? fullName.indexOf(separator, fromIndex)
-				: fullName.lastIndexOf(separator, fullName.length() - fromIndex);
+	public static int nextSep(String path, boolean first, char separator, int fromIndex) {
+		return first ? path.indexOf(separator, fromIndex)
+				: path.lastIndexOf(separator, path.length() - fromIndex);
 	}
 
-	public static KeyValue<String, String> separate(String fullName, boolean first, char separator) {
-		int sep = nextSep(fullName, first, separator, 0);
+	public static KeyValue<String, String> separate(String path, boolean first, char separator) {
+		int sep = nextSep(path, first, separator, 0);
 		if (sep == -1) {
-			return first ? new KeyValue<>(fullName, "") : new KeyValue<>("", fullName);
+			return first ? new KeyValue<>(path, "") : new KeyValue<>("", path);
 		} else {
-			return new KeyValue<>(fullName.substring(0, sep), fullName.substring(sep + 1));
+			return new KeyValue<>(path.substring(0, sep), path.substring(sep + 1));
 		}
 	}
 
-	public static KeyValue<String, String> separate(String fullName, boolean first) {
-		return separate(fullName, first, '.');
+	public static KeyValue<String, String> separate(String path, boolean first) {
+		return separate(path, first, '.');
 	}
 
-	public static String getPackage(String fullName) {
-		return separate(fullName, false).getKey();
+	public static String getPackage(String path) {
+		return separate(path, false).getKey();
 	}
 
-	public static String toSimpleName(String fullName) {
-		return separate(fullName, false).getValue();
+	public static String toSimpleName(String path) {
+		return separate(path, false).getValue();
 	}
 
-	public static List<String> fromFullName(String fullName) {
-		return asList(fullName.split("\\."));
+	public static List<String> fromPath(String path) {
+		return asList(path.split("\\."));
 	}
 
-	public static String toFullName(List<String> ids) {
+	public static String toPath(List<String> ids) {
 		return appendList(ids, "", "", ".", (t, sb) -> sb.append(t));
 	}
 
 	public StdPathManipulator() {
-		this('.');
+		super();
 	}
 
 	public StdPathManipulator(char separator) {
-		this.separator = separator;
+		super(separator);
 	}
 
 	@Override
-	public KeyValue<String, String> getRoot(String name) {
-		return separate(name, true, separator);
+	public KeyValue<String, String> getRoot(String path) {
+		return separate(path, true, separator());
 	}
 
 	@Override
-	public int nextLevel(String name, int from) {
-		return nextSep(name, true, separator, from);
-	}
-
-	@Override
-	public String combine(String prefix, String leaf) {
-		return prefix == null || prefix.isEmpty() ? leaf : prefix + "." + leaf;
+	public int nextLevel(String path, int from) {
+		return nextSep(path, true, separator(), from);
 	}
 
 	@Override
 	public boolean isSimple(String name) {
-		return name != null && !name.contains(".");
+		return name != null && !name.contains(separatorAsString());
 	}
 }
