@@ -14,6 +14,14 @@ import java.util.function.Predicate;
 import ms.ipp.Iterables;
 import ms.ipp.iterable.BiIterable;
 
+/**
+ * A concrete implementation of <code>Tree</code>, in which the associative and
+ * the iterative structures are determined by external methods.
+ * 
+ * @author mykhailo.saienko
+ *
+ * @param <F>
+ */
 public class SyntheticTree<F> extends AbstractTree<F> {
 
 	private static interface Setter<F> {
@@ -49,10 +57,10 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 		this(retriever, disabled("Iterating not supported"), clazz);
 	}
 
-	public SyntheticTree(Function<String, F> retriever, Iterable<Entry<String, F>> itGen, Class<F> clazz) {
+	public SyntheticTree(Function<String, F> retriever, Iterable<Entry<String, F>> iterable, Class<F> clazz) {
 		super(clazz);
 		this.retriever = retriever;
-		this.setIterable(itGen);
+		this.setIterable(iterable);
 	}
 
 	public SyntheticTree<F> setIterable(Iterable<Entry<String, F>> itGen) {

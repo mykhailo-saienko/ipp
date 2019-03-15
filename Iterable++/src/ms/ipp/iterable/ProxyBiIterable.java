@@ -5,6 +5,15 @@ import java.util.Map.Entry;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
+/**
+ * A wrapper for {@code Iterable<Map.Entry<T, U>>}.
+ * 
+ * 
+ * @author mykhailo.saienko
+ *
+ * @param <T>
+ * @param <U>
+ */
 public final class ProxyBiIterable<T, U> implements BiIterable<T, U> {
 
 	private final Iterable<Entry<T, U>> source;

@@ -7,18 +7,34 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class MappedIterator<T, U> implements Iterator<U> {
+/**
+ * A <i>Decorator</i> for an {@code Iterator<T>} which maps every element from T
+ * to R by means of a given mapping function.
+ * 
+ * @author mykhailo.saienko
+ *
+ * @param <T>
+ * @param <R>
+ */
+public class MappedIterator<T, R> implements Iterator<R> {
 
 	private final Iterator<T> source;
-	private final Function<? super T, U> mapper;
+	private final Function<? super T, R> mapper;
 	private Supplier<Boolean> onDelete;
 
-	public MappedIterator(Iterator<T> source, Function<? super T, U> mapper) {
+	/**
+	 * Creates an instance of {@code MappedIterator<T,R>} based on another
+	 * {@code Iterator<T>} and a given mapper from {@code T} to {@code R}.
+	 * 
+	 * @param source the original Iterator, not null
+	 * @param mapper the mapper, not null
+	 */
+	public MappedIterator(Iterator<T> source, Function<? super T, R> mapper) {
 		this.source = source;
 		this.mapper = mapper;
 	}
 
-	public MappedIterator<T, U> setOnDelete(Supplier<Boolean> onDelete) {
+	public MappedIterator<T, R> setOnDelete(Supplier<Boolean> onDelete) {
 		this.onDelete = onDelete;
 		return this;
 	}
@@ -29,7 +45,7 @@ public class MappedIterator<T, U> implements Iterator<U> {
 	}
 
 	@Override
-	public U next() {
+	public R next() {
 		return mapper.apply(source.next());
 	}
 
@@ -42,7 +58,7 @@ public class MappedIterator<T, U> implements Iterator<U> {
 	}
 
 	@Override
-	public void forEachRemaining(Consumer<? super U> action) {
+	public void forEachRemaining(Consumer<? super R> action) {
 		source.forEachRemaining(concatC(mapper, action));
 	}
 }

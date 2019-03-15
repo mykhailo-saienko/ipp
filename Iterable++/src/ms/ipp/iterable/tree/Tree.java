@@ -3,7 +3,7 @@ package ms.ipp.iterable.tree;
 import static ms.ipp.Iterables.toBiIt;
 import static ms.ipp.iterable.tree.TreeHelper.castIterator;
 import static ms.ipp.iterable.tree.TreeHelper.recursiveHead;
-import static ms.ipp.iterator.NestedIterator.combined;
+import static ms.ipp.iterator.NestedIterator.merge;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -434,7 +434,7 @@ class TreeHelper {
 		}
 		if (member instanceof Tree) {
 			Tree<?> ent = ((Tree<?>) member);
-			it = combined(it, new NestedIterator<>(ent.iterator(), e -> recursive(ent,
+			it = merge(it, new NestedIterator<>(ent.iterator(), e -> recursive(ent,
 					ent.getPathManipulator().combine(fullName, e.getKey()), e.getValue(), deleter(ent, e), clazz)));
 		}
 		return it;
