@@ -8,9 +8,22 @@ import ms.ipp.base.KeyValue;
 import ms.ipp.iterator.EmptyIterator;
 import ms.ipp.iterator.OneIterator;
 
+/**
+ * A {@code Tree}-wrapper around a {@code Map<String, F>} which doesn't allow
+ * multiple elements with the same name to co-exist.
+ * 
+ * @author mykhailo.saienko
+ *
+ * @param <F>
+ */
 public class StdTree<F> extends AbstractTree<F> {
 	private final HashMap<String, F> entities;
 
+	/**
+	 * Creates a new {@code StdTree} with a given base class.
+	 * 
+	 * @param clazz the base class, not null
+	 */
 	public StdTree(Class<F> clazz) {
 		super(clazz);
 		entities = new HashMap<>();

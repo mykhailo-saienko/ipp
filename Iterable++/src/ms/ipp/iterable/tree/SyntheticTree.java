@@ -33,9 +33,21 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 	private Predicate<String> deleter;
 	private Setter<F> setter;
 
+	/**
+	 * Constructs a {@link SyntheticTree<F>} out of a given {@code retriever},
+	 * {@code idRetriever}, and {@code iterable} adapted to the type {@code T} by
+	 * applying a given {@code converter} whenever needed
+	 * 
+	 * @param converter
+	 * @param setter
+	 * @param idRetriever
+	 * @param retriever
+	 * @param iterable
+	 * @param clazz
+	 */
 	public <T> SyntheticTree(Function<T, F> converter, BiConsumer<T, F> setter, Function<T, String> idRetriever,
-			Function<String, T> retriever, Iterable<T> forEach, Class<F> clazz) {
-		this(retriever.andThen(applyIf(t -> t != null, converter)), mapped(forEach, toKV(idRetriever, converter)),
+			Function<String, T> retriever, Iterable<T> iterable, Class<F> clazz) {
+		this(retriever.andThen(applyIf(t -> t != null, converter)), mapped(iterable, toKV(idRetriever, converter)),
 				clazz);
 		// Setter must ret
 		this.setter = (s, o, upd) -> {
@@ -48,6 +60,8 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 	}
 
 	/**
+	 * Creates a new Tree which uses a given {@code retriever} in its
+	 * {@code set(..)} and {@code doSet(..)} methods.
 	 * 
 	 * @param retriever
 	 * @param iterable
@@ -57,17 +71,28 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 		this(retriever, error("Iterating not supported"), clazz);
 	}
 
+	/**
+	 * Creates a new Tree which uses a given {@code retriever} in its
+	 * {@code doSet(..)} methods and a given {@code Iterable} in its
+	 * {@code members(..)} methods.
+	 * 
+	 * @param retriever
+	 * @param iterable
+	 * @param clazz
+	 */
 	public SyntheticTree(Function<String, F> retriever, Iterable<Entry<String, F>> iterable, Class<F> clazz) {
 		super(clazz);
 		this.retriever = retriever;
-		this.setIterable(iterable);
+		this.iterable = Iterables.toBiIt(iterable);
 	}
 
-	public SyntheticTree<F> setIterable(Iterable<Entry<String, F>> itGen) {
-		this.iterable = Iterables.toBiIt(itGen);
-		return this;
-	}
-
+	/**
+	 * Sets a method to use when the {@code doDelete} method is called.
+	 * 
+	 * @param deleter the method to use for deleting immediate children. If null,
+	 *                {@code doDelete} does nothing
+	 * @return
+	 */
 	public SyntheticTree<F> setDeleter(Predicate<String> deleter) {
 		this.deleter = deleter;
 		return this;
