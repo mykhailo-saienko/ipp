@@ -1,29 +1,24 @@
 package ms.ipp.iterable;
 
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Spliterator;
-import java.util.function.Consumer;
 
+import ms.ipp.Iterables;
+import ms.ipp.iterable.tree.Tree;
+
+/**
+ * A "convenience" interface for {@code Iterable<Map.Entry<T, U>>}. Introduced
+ * for several reasons:
+ * <li>It is used extensively by {@link Tree} and its implementations. Besides,
+ * the class {@link Iterables} has several methods designed specifically for
+ * {@code BiIterable<T,U>}.
+ * <li>Typing {@code BiIterable<T,U>} requires less efforts than
+ * {@code Iterable<Map.Entry<T,U>>} and is more expressive.
+ * 
+ * @author mykhailo.saienko
+ *
+ * @param <T>
+ * @param <U>
+ */
 public interface BiIterable<T, U> extends Iterable<Map.Entry<T, U>> {
 
-	public static <T, U> BiIterable<T, U> biIt(Iterable<Map.Entry<T, U>> source) {
-		return new BiIterable<T, U>() {
-			@Override
-			public Iterator<Entry<T, U>> iterator() {
-				return source.iterator();
-			}
-
-			@Override
-			public Spliterator<Entry<T, U>> spliterator() {
-				return source.spliterator();
-			}
-
-			@Override
-			public void forEach(Consumer<? super Entry<T, U>> action) {
-				source.forEach(action);
-			}
-		};
-	}
 }

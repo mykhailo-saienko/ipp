@@ -4,11 +4,11 @@ import ms.ipp.base.KeyValue;
 
 public interface PathManipulator {
 
-	KeyValue<String, String> getRoot(String name);
+	KeyValue<String, String> getRoot(String path);
 
-	int nextLevel(String name, int from);
+	int nextLevel(String path, int from);
 
 	String combine(String prefix, String leaf);
 
-	boolean isSimple(String name);
+	boolean isSimple(String path);
 }

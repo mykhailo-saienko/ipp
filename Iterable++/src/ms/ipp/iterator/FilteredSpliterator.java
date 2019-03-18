@@ -7,11 +7,26 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+/**
+ * A <i>Decorator</i> for an {@code Spliterator<T>} which only shows those
+ * elements, for which a given filter returns true.
+ * 
+ * @author mykhailo.saienko
+ *
+ * @param <T>
+ */
 public class FilteredSpliterator<T> implements Spliterator<T> {
 
 	private final Spliterator<T> source;
 	private final Predicate<? super T> filter;
 
+	/**
+	 * Creates an instance of {@code FilteredSpliterator<T>} based on another
+	 * {@code Spliterator<T>} and a given filter.
+	 * 
+	 * @param source the original Spliterator, not null
+	 * @param filter the filter, not null.
+	 */
 	public FilteredSpliterator(Spliterator<T> source, Predicate<? super T> filter) {
 		this.source = source;
 		this.filter = filter;

@@ -2,7 +2,7 @@ package ms.ipp.iterable.tree;
 
 import static ms.ipp.Algorithms.toFunc;
 import static ms.ipp.Iterables.removeFrom;
-import static ms.ipp.iterable.tree.EntityHelper.processMember;
+import static ms.ipp.iterable.tree.TreeHelper.processMember;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,11 +15,53 @@ import org.apache.log4j.Logger;
 import ms.ipp.iterable.tree.path.PathManipulator;
 import ms.ipp.iterable.tree.path.StdPathManipulator;
 
+/**
+ * A basic abstract implementation of all features shared by the concrete
+ * sub-implementations.
+ * 
+ * In particular, the following is implemented:
+ * <li>recursive methods, such as {@link #get(String, Class) get(..)},
+ * {@link #delete(String, Object) delete(..)}, {@link #peek(String, Class)
+ * peek(..)}, {@link #set(String, Object, Class) set(..)};
+ * <li>some preliminary checks for {@link #doDelete(String, Object)
+ * doDelete(..)}, {@link #doPeek(String, Class) doPeek(..)},
+ * {@link #doSet(String, Object, Class) doSet(..)};
+ * <li>metadata setters, such as {@link #setRecursion(Recursion)},
+ * {@link #setPathManipulator(PathManipulator)},
+ * {@link #setUpdater(Class, BiConsumer)}, and the corresponding getters.
+ * 
+ * @author mykhailo.saienko
+ *
+ * @param <F> as in {@link Tree}.
+ */
 public abstract class AbstractTree<F> implements Tree<F> {
 	protected static final Logger logger = Logger.getLogger(AbstractTree.class);
 
+	/**
+	 * The recursion mode used by <code>Tree</code> in recursive manipulations.
+	 * 
+	 * While trying to locate an element by its path, the tree asks its
+	 * {@link PathManipulator} to give the path' root, i.e., the name of the
+	 * immediate child this Tree is supposed to have.
+	 * <ul>
+	 * <li>If such a child is found (and is a {@link Tree}), it is prompted to
+	 * recursively locate an element given by the remaining part of the path until
+	 * this remaining part becomes empty.<br>
+	 * <li>If such a child is <i>not</i> found, the recursion mode decides on the
+	 * behaviour:
+	 * <ul>
+	 * <li>In the <code>STANDARD</code> mode, the search is interrupted and an error
+	 * is signalised.
+	 * <li>In the <code>EXHAUSTIVE</code> mode, the tree repeatedly prompts the
+	 * <code>PathManipulator</code> to extract a root from the remaining part of the
+	 * path and add it to the already used part and looks if there exists a child
+	 * with this newly combined name. If there is one, use it and the remaining part
+	 * of the path to conclude the search. If the entire path is used up and no
+	 * immediate children are found, the search is interrupted and an error is
+	 * signalised
+	 */
 	public static enum Recursion {
-		SIMPLE, GREEDY, FLAT;
+		STANDARD, EXHAUSTIVE;
 	}
 
 	private Recursion recursion;
@@ -31,43 +73,34 @@ public abstract class AbstractTree<F> implements Tree<F> {
 
 	public AbstractTree(Class<F> clazz) {
 		this.clazz = clazz;
-		setSeparator('.');
+		this.setPathManipulator(new StdPathManipulator('.'));
+
 		// The default converter assumes a member of type Entity is
 		// automatically Entity<F>.
-		setRecursion(Recursion.SIMPLE);
+		setRecursion(Recursion.STANDARD);
 		updaters = new HashMap<>();
 	}
 
-	/**
-	 * Null removes the updater
-	 * 
-	 * @param key
-	 * @param updater
-	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T extends F> void setUpdater(Class<T> key, BiConsumer<? extends F, T> updater) {
+	public <T extends F> void setUpdater(Class<T> key, BiConsumer<T, T> updater) {
 		if (updater == null) {
 			updaters.remove(key);
 		} else {
 			// we convert it without worries, since it will be only called in
 			// set(...) for values of Class<T> which can be converted back to
-			// T without problems
+			// F without problems
 			updaters.put(key, (BiConsumer<F, F>) updater);
 		}
 	}
 
-	protected BiConsumer<F, F> getUpdater(Class<?> key) {
-		return updaters.get(key);
-	}
-
-	public AbstractTree<F> setSeparator(char separator) {
-		this.manipulator = new StdPathManipulator(separator);
+	public AbstractTree<F> setRecursion(Recursion recursion) {
+		this.recursion = recursion;
 		return this;
 	}
 
-	public AbstractTree<F> setRecursion(Recursion recursion) {
-		this.recursion = recursion;
+	public AbstractTree<F> setPathManipulator(PathManipulator manipulator) {
+		this.manipulator = manipulator;
 		return this;
 	}
 
@@ -128,6 +161,10 @@ public abstract class AbstractTree<F> implements Tree<F> {
 	@Override
 	public Class<F> getBaseClass() {
 		return clazz;
+	}
+
+	protected BiConsumer<F, F> getUpdater(Class<?> key) {
+		return updaters.get(key);
 	}
 
 	/**

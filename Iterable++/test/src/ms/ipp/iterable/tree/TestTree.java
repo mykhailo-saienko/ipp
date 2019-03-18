@@ -11,7 +11,7 @@ import org.junit.Test;
 import ms.ipp.base.KeyValue;
 import ms.ipp.iterable.BiIterable;
 
-public class TestEntity {
+public class TestTree {
 	@Test
 	public void testPeeks() {
 		DelegatingTree<Number> entity = createSimpleDE();

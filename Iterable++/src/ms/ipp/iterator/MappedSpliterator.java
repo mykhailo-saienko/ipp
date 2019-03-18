@@ -6,11 +6,27 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+/**
+ * A <i>Decorator</i> for a {@code Spliterator<T>} which maps every element from
+ * T to R by means of a given mapping function.
+ * 
+ * @author mykhailo.saienko
+ *
+ * @param <T>
+ * @param <R>
+ */
 public class MappedSpliterator<T, R> implements Spliterator<R> {
 
 	private final Spliterator<T> it;
 	private final Function<? super T, R> mapper;
 
+	/**
+	 * Creates an instance of {@code MappedSpliterator<T,R>} based on another
+	 * {@code Spliterator<T>} and a given mapper from {@code T} to {@code R}.
+	 * 
+	 * @param source the original Spliterator, not null
+	 * @param mapper the mapper, not null
+	 */
 	public MappedSpliterator(Spliterator<T> it, Function<? super T, R> mapper) {
 		this.it = it;
 		this.mapper = mapper;

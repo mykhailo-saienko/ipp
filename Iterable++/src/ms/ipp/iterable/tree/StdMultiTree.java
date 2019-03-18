@@ -13,15 +13,43 @@ import ms.ipp.base.KeyValue;
 import ms.ipp.iterator.MappedIterator;
 import ms.ipp.iterator.NestedIterator;
 
+/**
+ * A {@code Tree}-wrapper around a {@code Map<String, List<F>>} which allows
+ * multiple elements with the same name to co-exist.
+ * 
+ * @author mykhailo.saienko
+ *
+ * @param <F>
+ */
 public class StdMultiTree<F> extends AbstractTree<F> {
 
 	private final Map<String, List<F>> members;
 	private final BiPredicate<F, F> isEqual;
 
+	/**
+	 * Creates a new {@code StdMultiTree} which uses the standard comparator for
+	 * duplicate checks when inserting new elements. Is equivalent to:
+	 * 
+	 * <pre>
+	 * new StdMultiTree<>(clazz, Iterables::isEqualOrNull);
+	 * </pre>
+	 * 
+	 * @see Iterables#isEqualOrNull(Object, Object)
+	 * @see #StdMultiTree(Class, BiPredicate)
+	 * 
+	 * @param clazz the base class, not null
+	 */
 	public StdMultiTree(Class<F> clazz) {
 		this(clazz, Iterables::isEqualOrNull);
 	}
 
+	/**
+	 * Creates a new {@code StdMultiTree} which uses a given {@link BiPredicate} for
+	 * duplicate checks when inserting new elements.
+	 * 
+	 * @param clazz   the base class, not null
+	 * @param isEqual the comparator to use for duplicate checks, not null
+	 */
 	public StdMultiTree(Class<F> clazz, BiPredicate<F, F> isEqual) {
 		super(clazz);
 		// all objects with the same name should still be unique wrt to this

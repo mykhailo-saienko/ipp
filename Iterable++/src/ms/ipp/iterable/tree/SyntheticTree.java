@@ -1,7 +1,7 @@
 package ms.ipp.iterable.tree;
 
 import static ms.ipp.Algorithms.applyIf;
-import static ms.ipp.Algorithms.disabled;
+import static ms.ipp.Algorithms.error;
 import static ms.ipp.Algorithms.toKV;
 import static ms.ipp.Iterables.mapped;
 
@@ -14,6 +14,14 @@ import java.util.function.Predicate;
 import ms.ipp.Iterables;
 import ms.ipp.iterable.BiIterable;
 
+/**
+ * A concrete implementation of <code>Tree</code>, in which the associative and
+ * the iterative structures are determined by external methods.
+ * 
+ * @author mykhailo.saienko
+ *
+ * @param <F>
+ */
 public class SyntheticTree<F> extends AbstractTree<F> {
 
 	private static interface Setter<F> {
@@ -21,13 +29,25 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 	}
 
 	private final Function<String, F> retriever;
-	private BiIterable<String, F> forEach;
+	private BiIterable<String, F> iterable;
 	private Predicate<String> deleter;
 	private Setter<F> setter;
 
+	/**
+	 * Constructs a {@link SyntheticTree<F>} out of a given {@code retriever},
+	 * {@code idRetriever}, and {@code iterable} adapted to the type {@code T} by
+	 * applying a given {@code converter} whenever needed
+	 * 
+	 * @param converter
+	 * @param setter
+	 * @param idRetriever
+	 * @param retriever
+	 * @param iterable
+	 * @param clazz
+	 */
 	public <T> SyntheticTree(Function<T, F> converter, BiConsumer<T, F> setter, Function<T, String> idRetriever,
-			Function<String, T> retriever, Iterable<T> forEach, Class<F> clazz) {
-		this(retriever.andThen(applyIf(t -> t != null, converter)), mapped(forEach, toKV(idRetriever, converter)),
+			Function<String, T> retriever, Iterable<T> iterable, Class<F> clazz) {
+		this(retriever.andThen(applyIf(t -> t != null, converter)), mapped(iterable, toKV(idRetriever, converter)),
 				clazz);
 		// Setter must ret
 		this.setter = (s, o, upd) -> {
@@ -40,26 +60,39 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 	}
 
 	/**
+	 * Creates a new Tree which uses a given {@code retriever} in its
+	 * {@code set(..)} and {@code doSet(..)} methods.
 	 * 
 	 * @param retriever
-	 * @param forEach
+	 * @param iterable
 	 * @param clazz
 	 */
 	public SyntheticTree(Function<String, F> retriever, Class<F> clazz) {
-		this(retriever, disabled("Iterating not supported"), clazz);
+		this(retriever, error("Iterating not supported"), clazz);
 	}
 
-	public SyntheticTree(Function<String, F> retriever, Iterable<Entry<String, F>> itGen, Class<F> clazz) {
+	/**
+	 * Creates a new Tree which uses a given {@code retriever} in its
+	 * {@code doSet(..)} methods and a given {@code Iterable} in its
+	 * {@code members(..)} methods.
+	 * 
+	 * @param retriever
+	 * @param iterable
+	 * @param clazz
+	 */
+	public SyntheticTree(Function<String, F> retriever, Iterable<Entry<String, F>> iterable, Class<F> clazz) {
 		super(clazz);
 		this.retriever = retriever;
-		this.setIterator(itGen);
+		this.iterable = Iterables.toBiIt(iterable);
 	}
 
-	public SyntheticTree<F> setIterator(Iterable<Entry<String, F>> itGen) {
-		this.forEach = Iterables.toBiIt(itGen);
-		return this;
-	}
-
+	/**
+	 * Sets a method to use when the {@code doDelete} method is called.
+	 * 
+	 * @param deleter the method to use for deleting immediate children. If null,
+	 *                {@code doDelete} does nothing
+	 * @return
+	 */
 	public SyntheticTree<F> setDeleter(Predicate<String> deleter) {
 		this.deleter = deleter;
 		return this;
@@ -67,7 +100,7 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 
 	@Override
 	public Iterator<Entry<String, F>> iterator() {
-		return forEach.iterator();
+		return iterable.iterator();
 	}
 
 	@Override

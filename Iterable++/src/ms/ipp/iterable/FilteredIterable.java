@@ -12,31 +12,70 @@ import ms.ipp.iterator.CustomDeleteIterator;
 import ms.ipp.iterator.FilteredIterator;
 import ms.ipp.iterator.FilteredSpliterator;
 
+/**
+ * A <i>Decorator</i> for an {@code Iterable<T>} which only shows those
+ * elements, for which a given filter returns true. The class also accepts an
+ * onDelete-hook which is passed on to the iterators it creates (see
+ * {@link CustomDeleteIterator} for more details).
+ * 
+ * 
+ * @author mykhailo.saienko
+ *
+ * @param <T>
+ */
 public class FilteredIterable<T> implements Iterable<T> {
 
 	private final Iterable<T> source;
 
-	Supplier<Predicate<? super T>> filter;
-	Supplier<Consumer<? super T>> onDelete;
+	private Supplier<Predicate<? super T>> filter;
+	private Supplier<Consumer<? super T>> onDelete;
 
 	public FilteredIterable(Iterable<T> source) {
 		this.source = source;
 	}
 
+	/**
+	 * Sets the filter supplier.<br>
+	 * <b>NOTE:</b> The class does not accept Predicates directly, as filters may be
+	 * stateful (for example,
+	 * {@link FilteredIterator#distinctByKey(java.util.function.Function)
+	 * FilteredIterator::distinctByKey(..)} creates such a filter). Hence, every
+	 * created iterator must have its own copy of the filter.
+	 * 
+	 * @param filter
+	 * @return
+	 */
 	public FilteredIterable<T> setFilter(Supplier<Predicate<? super T>> filter) {
 		this.filter = filter;
 		return this;
 	}
 
+	/**
+	 * Sets the onDelete-hook supplier.
+	 * 
+	 * @param onDelete
+	 * @return
+	 */
 	public FilteredIterable<T> setOnDelete(Supplier<Consumer<? super T>> onDelete) {
 		this.onDelete = onDelete;
 		return this;
 	}
 
+	/**
+	 * Sets a simple onDelete-hook shared by all iterators.
+	 * 
+	 * @param onDelete
+	 * @return
+	 */
 	public FilteredIterable<T> setOnDelete(Consumer<? super T> onDelete) {
 		return setOnDelete(() -> onDelete);
 	}
 
+	/**
+	 * If the filter is not null, returns a {@link FilteredIterator} with the
+	 * filter. Additionally, decorates the resulting iterator with the the
+	 * onDelete-hook if the latter is not null.
+	 */
 	@Override
 	public Iterator<T> iterator() {
 		if (source == null) {
@@ -52,6 +91,11 @@ public class FilteredIterable<T> implements Iterable<T> {
 		return it;
 	}
 
+	/**
+	 * If the filter is not null, returns a {@link FilteredSpliterator} with the
+	 * filter. Otherwise, returns the {@link Spliterator} created by the original
+	 * {@code Iterable}.
+	 */
 	@Override
 	public Spliterator<T> spliterator() {
 		if (source == null) {
@@ -64,6 +108,9 @@ public class FilteredIterable<T> implements Iterable<T> {
 		return sp;
 	}
 
+	/**
+	 * Performs a given action for all elements for which the filter returns true.
+	 */
 	@Override
 	public void forEach(Consumer<? super T> action) {
 		if (source != null) {

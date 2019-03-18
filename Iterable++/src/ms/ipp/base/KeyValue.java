@@ -4,6 +4,15 @@ import static ms.ipp.Iterables.isEqualOrNull;
 
 import java.util.Map;
 
+/**
+ * A concrete implementation of {@code Map.Entry<T, V>}
+ * 
+ * @author mykhailo.saienko
+ *
+ * @see Map.Entry
+ * @param <T>
+ * @param <V>
+ */
 public class KeyValue<T, V> implements Map.Entry<T, V> {
 	private T key;
 	private V value;
@@ -12,14 +21,28 @@ public class KeyValue<T, V> implements Map.Entry<T, V> {
 		return new KeyValue<U, W>(key, value);
 	}
 
+	/**
+	 * Creates a new KeyValue with both the key and the value equal to null.
+	 */
 	public KeyValue() {
 		this(null, null);
 	}
 
+	/**
+	 * Creates a copy of existing {@code Map.Entry}.
+	 * 
+	 * @param source the source Map.Entry, not null
+	 */
 	public KeyValue(Map.Entry<T, V> source) {
 		this(source.getKey(), source.getValue());
 	}
 
+	/**
+	 * Creates a new KeyValue with given key and value.
+	 * 
+	 * @param key
+	 * @param value
+	 */
 	public KeyValue(T key, V value) {
 		this.key = key;
 		this.value = value;
@@ -35,6 +58,11 @@ public class KeyValue<T, V> implements Map.Entry<T, V> {
 		return value;
 	}
 
+	/**
+	 * Sets a new key.
+	 * 
+	 * @param key
+	 */
 	public void setKey(T key) {
 		this.key = key;
 	}
