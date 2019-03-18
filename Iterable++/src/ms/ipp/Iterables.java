@@ -1,19 +1,18 @@
 package ms.ipp;
 
-import static java.util.Arrays.asList;
 import static ms.ipp.Algorithms.toKV;
 import static ms.ipp.Streams.stream;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -40,8 +39,6 @@ import ms.ipp.iterator.FilteredIterator;
  * 
  */
 public class Iterables {
-	private static final String SEPARATORS = ",";
-
 	/**
 	 * A No-Op
 	 */
@@ -517,6 +514,33 @@ public class Iterables {
 	}
 
 	/**
+	 * Returns a {@code List} containing all elements inserted by a given
+	 * {@code parser} after applying it to every element in a given
+	 * {@code Collection}. Any exceptions thrown by the {@code parser} are converted
+	 * to {@link IllegalArgumentException}.
+	 * 
+	 * @param items  the original collection, not null
+	 * @param parser the BiConsumer which decides how to populate the resulting
+	 *               list, not null
+	 * @return
+	 * @throws IllegalArgumentException if items is null or parser throws.
+	 */
+	public static <S, T> List<T> parseList(Collection<S> items, BiConsumer<S, List<T>> parser) {
+		if (items == null) {
+			throw new IllegalArgumentException("Can not convert a null list");
+		}
+		List<T> result = new ArrayList<>();
+		for (S s : items) {
+			try {
+				parser.accept(s, result);
+			} catch (Exception e) {
+				throw new IllegalArgumentException("Parameter list " + items + " cannot be parsed");
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * Filters out all elements from the original {@code Collection} that do not
 	 * satisfy a given {@code Predicate} and returns a {@code List} containing all
 	 * elements from the filtered {@code Collection} transformed by means of a given
@@ -556,49 +580,139 @@ public class Iterables {
 	}
 
 	///// ************ Shortcuts for Collection serializing ************** /////
+	/**
+	 * Serialises an array by interlacing all elements with ','.
+	 * 
+	 * @param array the source array, not null
+	 * @return
+	 */
 	public static <T> String toString(T[] array) {
 		StringBuffer buf = new StringBuffer(500);
 		appendList(buf, Arrays.asList(array));
 		return buf.toString();
 	}
 
-	public static void appendList(StringBuffer buf, Collection<?> list) {
-		appendList(buf, list, (t, b) -> b.append(t.toString()));
+	/**
+	 * Is equivalent to:
+	 * 
+	 * <pre>
+	 * appendList(buf, items, "[", "]", ", ", (t, b) -> b.append(t.toString()));
+	 * </pre>
+	 * 
+	 * @param buf   the StringBuffer to add the serialised Collection to, not null
+	 * @param items the original Collection, not null
+	 * 
+	 */
+	public static void appendList(StringBuffer buf, Collection<?> items) {
+		appendList(buf, items, (t, b) -> b.append(t.toString()));
 	}
 
-	public static <T> void appendList(StringBuffer buf, Collection<? extends T> list,
+	/**
+	 * Is equivalent to:
+	 * 
+	 * <pre>
+	 * appendList(buf, items, "[", "]", ", ", serializer);
+	 * </pre>
+	 * 
+	 * @param buf        the StringBuffer to add the serialised Collection to, not
+	 *                   null
+	 * @param items      the original Collection, not null
+	 * @param serializer a BiConsumer which should add to a StringBuffer the
+	 *                   serialised version on the element passed, not null
+	 */
+	public static <T> void appendList(StringBuffer buf, Collection<? extends T> items,
 			BiConsumer<T, StringBuffer> serializer) {
-		appendList(buf, list, "[", "]", ", ", serializer);
+		appendList(buf, items, "[", "]", ", ", serializer);
 	}
 
-	public static <T> void appendList(StringBuffer buf, Collection<? extends T> list, String op, String cl, String sep,
+	/**
+	 * Serialises a {@code Collection} by using a given opening string, a given
+	 * closing string, a given separator as well as a given serialiser for each
+	 * element in the {@code Collection} and adds the serialised content to a given
+	 * {@code StringBuffer}.
+	 * 
+	 * @param buf        the StringBuffer to add the serialised Collection to, not
+	 *                   null
+	 * @param items      the original Collection, not null
+	 * @param op         the string which is prepended to the serialised Collection,
+	 *                   not null
+	 * @param cl         the string added to the serialised Collection at the end,
+	 *                   not null
+	 * @param sep        the string to mark the two elements as separate, not null
+	 * @param serializer a BiConsumer which should add to a StringBuffer the
+	 *                   serialised version on the element passed, not null
+	 */
+	public static <T> void appendList(StringBuffer buf, Collection<? extends T> items, String op, String cl, String sep,
 			BiConsumer<T, StringBuffer> serializer) {
 		buf.append(op);
 
-		for (T t : list) {
+		for (T t : items) {
 			serializer.accept(t, buf);
 			buf.append(sep);
 		}
 
-		if (list.size() >= 1) {
+		if (items.size() >= 1) {
 			buf.delete(buf.length() - sep.length(), buf.length());
 		}
 		buf.append(cl);
 	}
 
-	public static <T> String appendList(Collection<? extends T> list, String op, String cl, String sep,
-			Function<T, String> serializer) {
-		return appendList(list, op, cl, sep, (s, sb) -> sb.append(serializer.apply(s)));
-	}
-
-	public static <T> String appendList(Collection<? extends T> list, String op, String cl, String sep,
+	/**
+	 * Serialises a {@code Collection} by using a given opening string, a given
+	 * closing string, a given separator as well as a given serialiser for each
+	 * element in the {@code Collection} and returns the serialised content.
+	 * Internally, it creates an interim {@link StringBuffer}, calls
+	 * {@link #appendList(StringBuffer, Collection, String, String, String, BiConsumer)}
+	 * and returns the buffer's content.
+	 * 
+	 * @param items      the original Collection, not null
+	 * @param op         the string which is prepended to the serialised Collection,
+	 *                   not null
+	 * @param cl         the string added to the serialised Collection at the end,
+	 *                   not null
+	 * @param sep        the string to mark the two elements as separate, not null
+	 * @param serializer a BiConsumer which should add to a StringBuffer the
+	 *                   serialised version on the element passed, not null
+	 * @return
+	 */
+	public static <T> String appendList(Collection<? extends T> items, String op, String cl, String sep,
 			BiConsumer<T, StringBuffer> serializer) {
-		StringBuffer sb = new StringBuffer(list.size() * 1000);
-		appendList(sb, list, op, cl, sep, serializer);
+		StringBuffer sb = new StringBuffer(items.size() * 1000);
+		appendList(sb, items, op, cl, sep, serializer);
 		return sb.toString();
 	}
 
+	/**
+	 * Serialises a {@code Collection} by using a given opening string, a given
+	 * closing string, a given separator as well as a given serialiser for each
+	 * element in the {@code Collection} and returns the serialised content. Is
+	 * equivalent to:
+	 * {@code appendList(items, op, cl, sep, (s, sb) -> sb.append(serializer.apply(s)));}
+	 * 
+	 * @param items      the original Collection, not null
+	 * @param op         the string which is prepended to the serialised Collection,
+	 *                   not null
+	 * @param cl         the string added to the serialised Collection at the end,
+	 *                   not null
+	 * @param sep        the string to mark the two elements as separate, not null
+	 * @param serializer a Function which generates a serialised version of a
+	 *                   collection element passed, not null
+	 * @return
+	 */
+	public static <T> String appendList(Collection<? extends T> items, String op, String cl, String sep,
+			Function<T, String> serializer) {
+		return appendList(items, op, cl, sep, (s, sb) -> sb.append(serializer.apply(s)));
+	}
+
 	///// ************ Shortcuts for Lists ************** /////
+	/**
+	 * Returns the first index on a given list, for which a given Predicate returns
+	 * true. If no elements satisfy the Predicate, returns -1.
+	 * 
+	 * @param list the original List. Null returns -1.
+	 * @param pred the Predicate to test, not null
+	 * @return
+	 */
 	public static <T> int indexOf(List<T> list, Predicate<T> pred) {
 		if (list == null) {
 			return -1;
@@ -611,6 +725,15 @@ public class Iterables {
 		return -1;
 	}
 
+	/**
+	 * Returns the first index starting from the back of a given list, for which a
+	 * given Predicate returns true. If no elements satisfy the Predicate, returns
+	 * -1.
+	 * 
+	 * @param list the original List. Null returns -1.
+	 * @param pred the Predicate to test, not null
+	 * @return
+	 */
 	public static <T> int lastIndexOf(List<T> list, Predicate<T> pred) {
 		if (list == null) {
 			return -1;
@@ -623,16 +746,52 @@ public class Iterables {
 		return -1;
 	}
 
+	/**
+	 * Returns an array which contains the indexes of the elements of
+	 * {@code subList} in {@code totalList}. The order of indexes in the resulting
+	 * array correspond to the order of elements in {@code subList}. If any element
+	 * from {@code subList} is not found in the {@code totalList}, its index in the
+	 * resulting array is to -1.
+	 * 
+	 * @param totalList the list of all elements. If null, an empty list is used
+	 *                  instead
+	 * @param subList   the list of elements whose indexes in the {@code totalList}
+	 *                  need to be found, not null
+	 * @return
+	 */
 	public static <U> int[] getIndexes(List<U> totalList, List<U> subList) {
 		totalList = totalList == null ? new ArrayList<>() : totalList;
 		return totalList.stream().mapToInt(s -> subList.indexOf(s)).toArray();
 	}
 
 	///// ************ Shortcuts for Maps ************** /////
+	/**
+	 * Performs a given action on an element with a given key if such element
+	 * exists. Is equivalent to:
+	 * 
+	 * <pre>
+	 * ifExistsDo(name, attrs, null, proc);
+	 * </pre>
+	 * 
+	 * @param name  the key of the target element, not null
+	 * @param attrs a string-based map with elements, not null
+	 * @param proc  the action to be performed on the element with a given key, not
+	 *              null.
+	 */
 	public static <T> void ifExistsDo(String name, Map<String, ? extends Object> attrs, Consumer<T> proc) {
 		ifExistsDo(name, attrs, null, proc);
 	}
 
+	/**
+	 * Performs a given action on an element with a given key if such element exists
+	 * and is not contained in a given list of elements to be ignored.
+	 * 
+	 * @param name   the key of the target element, not null
+	 * @param attrs  a string-based map with elements, not null
+	 * @param ignore a list with keys to be ignored, may be null.
+	 * @param proc   the action to be performed on the element with a given key, not
+	 *               null.
+	 */
 	@SuppressWarnings("unchecked")
 	public static <T> void ifExistsDo(String name, Map<String, ? extends Object> attrs, List<String> ignore,
 			Consumer<T> proc) {
@@ -641,10 +800,29 @@ public class Iterables {
 		}
 	}
 
+	/**
+	 * Returns the list with a given key from a given map of lists. If the list
+	 * doesn't exist or is null, a new empty {@link ArrayList} is inserted into the
+	 * map prior to being returned.
+	 * 
+	 * @param key
+	 * @param map
+	 * @return
+	 */
 	public static <T, U> List<U> getInsert(T key, Map<T, List<U>> map) {
-		return getInsert(key, map, () -> new ArrayList<>());
+		return getInsert(key, map, ArrayList::new);
 	}
 
+	/**
+	 * Returns the element with a given key from a given map. If the element doesn't
+	 * exist or is null, it is created by means of a given Supplier and inserted
+	 * into the map prior to being returned.
+	 * 
+	 * @param key
+	 * @param map
+	 * @param onNull is called when the element is null or doesn't exist, not null.
+	 * @return
+	 */
 	public static <T, U> U getInsert(T key, Map<T, U> map, Supplier<U> onNull) {
 		U value = map.get(key);
 		if (value == null) {
@@ -654,20 +832,49 @@ public class Iterables {
 		return value;
 	}
 
-	public static <T> T get(Object key, Map<?, ?> attrs) {
-		return get(key, attrs, (T) null);
+	/**
+	 * Is equivalent to: {@code get(key, attrs, (U) null); }
+	 * 
+	 * @see #get(Object, Map, Supplier)
+	 * @param key
+	 * @param attrs
+	 * @return
+	 */
+	public static <T, U> U get(T key, Map<T, ?> attrs) {
+		return get(key, attrs, (U) null);
 	}
 
-	public static <T> T get(Object key, Map<?, ?> attrs, T def) {
+	/**
+	 * Is equivalent to: {@code get(key, attrs, () -> def);}
+	 * 
+	 * @see #get(Object, Map, Supplier)
+	 * 
+	 * @param key
+	 * @param attrs
+	 * @param def
+	 * @return
+	 */
+	public static <T, U> U get(T key, Map<T, ?> attrs, U def) {
 		return get(key, attrs, () -> def);
 	}
 
+	/**
+	 * Returns the element with a given key from a given map. If the element doesn't
+	 * exist or is null, it is created by means of a given Supplier and returned
+	 * afterwards. In contrast to {@link #getInsert(Object, Map, Supplier)}, the
+	 * newly created element is NOT inserted into the map.
+	 * 
+	 * @param key
+	 * @param map
+	 * @param def is called when the element is null or doesn't exist, not null.
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T get(Object key, Map<?, ?> attrs, Supplier<T> def) {
-		Object obj = attrs.get(key);
+	public static <T, U> U get(T key, Map<T, ?> map, Supplier<U> def) {
+		Object obj = map.get(key);
 		try {
 			if (obj != null) {
-				return (T) obj;
+				return (U) obj;
 			} else {
 				return def.get();
 			}
@@ -677,6 +884,18 @@ public class Iterables {
 		}
 	}
 
+	/**
+	 * Returns the element with a given key from a given map. If the element exists,
+	 * it is additionally removed from the map.. If the element doesn't exist or is
+	 * null, it is created by means of a given Supplier and returned afterwards. In
+	 * contrast to {@link #getInsert(Object, Map, Supplier)}, the newly created
+	 * element is NOT inserted into the map.
+	 * 
+	 * @param key
+	 * @param map
+	 * @param def is called when the element is null or doesn't exist, not null.
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public static <T> T remove(Object key, Map<?, ?> attrs, Supplier<T> def) {
 		Object obj = attrs.remove(key);
@@ -692,39 +911,51 @@ public class Iterables {
 		}
 	}
 
-	public static <T, U> Map<T, U> asMap(T[] a, U[] b) {
-		if (a == null || b == null) {
-			throw new IllegalArgumentException("Key or value array is null");
+	/**
+	 * Creates a map out of two arrays of equal length. The elements are grouped by
+	 * their index, i.e., the value with index {@code i} is retrieved by the key
+	 * with index {@code i}. If {@code keys} contain duplicate keys, the one with
+	 * higher index is preferred. The {@code values} contains null-values, these are
+	 * inserted without an error.
+	 * 
+	 * @param keys   the array of keys, not null
+	 * @param values the array of values, not null
+	 * @return
+	 * @throws IllegalArgumentException is any of the input arrays are null or they
+	 *                                  are not of equal length
+	 */
+	public static <T, V> Map<T, V> makeMap(T[] keys, V[] values) {
+		if (keys == null || values == null) {
+			throw new IllegalArgumentException("Keys and values must both be not null");
 		}
-
-		Map<T, U> map = new HashMap<>();
-		for (int i = 0; i < a.length; ++i) {
-			T key = a[i];
-			U value = i >= b.length ? null : b[i];
-			map.put(key, value);
+		if (keys.length != values.length) {
+			throw new IllegalArgumentException("Keys and values must be of the same length! Keys has length "
+					+ keys.length + "; values: " + values.length);
 		}
-		return map;
-	}
-
-	public static <T, V> Map<T, V> makeMap(T[] names, V[] values) {
 		Map<T, V> map = new HashMap<T, V>();
-		if (names == null || values == null) {
-			throw new IllegalArgumentException("Names and values must both be not null");
-		}
-		if (names.length != values.length) {
-			throw new IllegalArgumentException("Names and values must be of the same length! Names has length "
-					+ names.length + "; values - " + values.length);
-		}
-		for (int i = 0; i < names.length; i++) {
-			map.put(names[i], values[i]);
+		for (int i = 0; i < keys.length; i++) {
+			map.put(keys[i], values[i]);
 		}
 		return map;
 	}
 
-	public static <K, V> Map<K, V> filter(Map<K, V> map, BiPredicate<? super K, ? super V> entryPred) {
+	/**
+	 * Returns a new (modifiable) {@code HashMap} containing only those entries from
+	 * the original {@code Map} which satisfy a given {@code BiPredicate}.
+	 * 
+	 * @param map  the original Map, not null
+	 * @param pred the BiPredicate accepting the entry's key as the first and the
+	 *             value as the second argument. Null returns a copy of the original
+	 *             Map.
+	 * @return
+	 */
+	public static <K, V> Map<K, V> filter(Map<K, V> map, BiPredicate<? super K, ? super V> pred) {
 		Map<K, V> result = new HashMap<>();
+		if (pred == null) {
+			pred = (a, b) -> true;
+		}
 		for (Map.Entry<K, V> e : map.entrySet()) {
-			if (entryPred.test(e.getKey(), e.getValue())) {
+			if (pred.test(e.getKey(), e.getValue())) {
 				result.put(e.getKey(), e.getValue());
 			}
 		}
@@ -732,68 +963,40 @@ public class Iterables {
 	}
 
 	/**
-	 * Returns a map of the same type as the original with keys modified by the
-	 * keyMapper
+	 * Returns a new (modifiable) Map with keys modified by the {@code keyMapper}
+	 * and the same values as in the original. If two initially different keys are
+	 * mapped to the same key, the one inserted later is retained.
 	 * 
-	 * @param items
-	 * @param keyMapper
-	 * @return
+	 * @param map       the original map, not null
+	 * @param keyMapper the mapper, not null
+	 * @return If the original Map is a {@link NavigableMap}, the returned map is
+	 *         {@code TreeMap},too. Otherwise, the result is a {@link HashMap}.
 	 */
-	public static <T, U, V> Map<U, V> map(Map<T, V> items, Function<T, U> keyMapper) {
-		if (items == null) {
-			return null;
-		}
-		Map<U, V> target = items instanceof TreeMap ? new TreeMap<>() : new HashMap<>();
+	public static <T, W, U> Map<W, U> mapKeys(Map<T, U> map, Function<T, W> keyMapper) {
+		Map<W, U> target = map instanceof NavigableMap ? new TreeMap<>() : new HashMap<>();
 
-		for (Map.Entry<T, V> e : items.entrySet()) {
+		for (Map.Entry<T, U> e : map.entrySet()) {
 			target.put(keyMapper.apply(e.getKey()), e.getValue());
 		}
 		return target;
 	}
 
-	public static <T, U> TreeMap<Date, U> transform(Map<Date, T> source, Function<T, U> transformer) {
-		TreeMap<Date, U> result = new TreeMap<>();
-		for (Map.Entry<Date, T> e : source.entrySet()) {
-			result.put(e.getKey(), transformer.apply(e.getValue()));
-		}
-		return result;
-	}
+	/**
+	 * Returns a new (modifiable) Map with values modified by the
+	 * {@code valueMapper} and the same values as in the original. The modified
+	 * values are allowed to be null.
+	 * 
+	 * @param map         the original map, not null
+	 * @param valueMapper the value mapper, not null
+	 * @return If the original is null, null is returned. If the original is a
+	 *         {@link NavigableMap}, the returned map is {@code TreeMap},too.
+	 *         Otherwise, the result is a {@link HashMap}.
+	 */
+	public static <T, U, V> Map<T, V> mapValues(Map<T, U> map, Function<U, V> valueMapper) {
+		Map<T, V> result = map instanceof NavigableMap ? new TreeMap<>() : new HashMap<>();
 
-	///// ************ Shortcuts for String Parsing ************** /////
-	// TODO: What is it doing here?
-	public static int replaceToken(StringBuffer buffer, String tokenName, String tokenValue) {
-		int index = 0;
-		int count = 0;
-		while ((index = buffer.indexOf(tokenName, index)) != -1) {
-			buffer.replace(index, index + tokenName.length(), tokenValue);
-			count++;
-		}
-		return count;
-	}
-
-	public static List<String> makeList(String source) {
-		return makeList(source, SEPARATORS);
-	}
-
-	public static List<String> makeList(String source, String regex) {
-		return (source != null) ? asList(source.split(regex)) : new ArrayList<String>();
-	}
-
-	public static <T> List<T> parseList(List<String> source, Function<String, T> parser) {
-		return parseList(source, (s, res) -> res.add(parser.apply(s)));
-	}
-
-	public static <T> List<T> parseList(List<String> source, BiConsumer<String, List<T>> parser) {
-		if (source == null) {
-			throw new IllegalArgumentException("Can not convert a null list");
-		}
-		List<T> result = new ArrayList<>();
-		for (String s : source) {
-			try {
-				parser.accept(s, result);
-			} catch (Exception e) {
-				throw new IllegalArgumentException("Parameter list " + source + " cannot be parsed");
-			}
+		for (Map.Entry<T, U> e : map.entrySet()) {
+			result.put(e.getKey(), valueMapper.apply(e.getValue()));
 		}
 		return result;
 	}
@@ -802,10 +1005,11 @@ public class Iterables {
 
 	/**
 	 * Returns a symmetric difference of two sets, i.e. a set containing elements
-	 * from either s1 or s2 but filters out those that lie in both sets.
+	 * from either {@code s1} or {@code s2} but filters out those that lie in both
+	 * sets. The original sets are left unmodified.
 	 * 
-	 * @param s1
-	 * @param s2
+	 * @param s1 one of the original collections, not null
+	 * @param s2 another original collection, not null
 	 * @return
 	 */
 	public static <T> Set<T> symmDiff(final Collection<? extends T> s1, final Collection<? extends T> s2) {
@@ -817,35 +1021,76 @@ public class Iterables {
 		return symmetricDiff;
 	}
 
-	public static <T> List<T> intersection(List<T> list1, List<T> list2) {
-		List<T> list = new ArrayList<T>();
+	/**
+	 * Returns an intersection of two sets, i.e., a set containing elements
+	 * contained in both {@code s1} and {@code s2}. The original sets are left
+	 * unmodified.
+	 * 
+	 * @param s1 one of the original collections, not null
+	 * @param s2 another original collection, not null
+	 * @return
+	 */
+	public static <T> List<T> intersection(Collection<T> s1, Collection<T> s2) {
+		List<T> result = new ArrayList<T>();
 		// lookups are O(1) in a set and O(n) in a list. So convert to a set.
 		// It is better to have 2*O(n) than O(n^2).
-		Set<T> set2 = new HashSet<>(list2);
-		for (T t : list1) {
+		Set<T> set2 = new HashSet<>(s2);
+		for (T t : s1) {
 			if (set2.contains(t)) {
-				list.add(t);
+				result.add(t);
 			}
 		}
 
-		return list;
+		return result;
 	}
 
-	public static <T> List<T> union(Collection<T> list1, Collection<T> list2) {
+	/**
+	 * Returns an intersection of two sets, i.e., a set containing elements
+	 * contained in at least one of the sets {@code s1}, {@code s2}. The original
+	 * sets are left unmodified.
+	 * 
+	 * @param s1 one of the original collections, not null
+	 * @param s2 another original collection, not null
+	 * @return
+	 */
+	public static <T> Set<T> union(Collection<T> s1, Collection<T> s2) {
 		Set<T> temp = new HashSet<>();
-		temp.addAll(list1);
-		temp.addAll(list2);
-		return new ArrayList<>(temp);
+		temp.addAll(s1);
+		temp.addAll(s2);
+		return temp;
 	}
 
-	public static <T> Set<T> asSet(T... a) {
-		return Stream.of(a).collect(Collectors.toSet());
+	/**
+	 * Converts given elements into a {@link Set}. There are no guarantees on the
+	 * type, mutability, serialisability, or thread-safety of the {@code Set}
+	 * returned.
+	 * 
+	 * @see Collectors#toSet()
+	 * @param elems
+	 * @return
+	 */
+	@SafeVarargs
+	public static <T> Set<T> asSet(T... elems) {
+		return Stream.of(elems).collect(Collectors.toSet());
 	}
 
+	/**
+	 * Returns true if either both elements are null or {@code o1}'s method
+	 * {@code equals} returns true when called with {@code o2} as the argument.
+	 * 
+	 * @param o1
+	 * @param o2
+	 * @return
+	 */
 	public static boolean isEqualOrNull(Object o1, Object o2) {
 		return (o1 == null && o1 == o2) || (o1 != null && o1.equals(o2));
 	}
 
+	/**
+	 * Creates a Class-object corresponding to a List of generic type {@code T}.
+	 * 
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public static <T> Class<List<T>> listClass() {
 		return (Class<List<T>>) new ArrayList<T>().getClass();

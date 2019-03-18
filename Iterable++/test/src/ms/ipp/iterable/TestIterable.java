@@ -17,12 +17,26 @@ import java.util.TreeMap;
 import org.junit.Assert;
 import org.junit.Test;
 
+import ms.ipp.Iterables;
 import ms.ipp.base.KeyValue;
-import ms.ipp.iterable.BiIterable;
+import ms.ipp.iterator.FilteredIterator;
 import ms.ipp.iterator.MappedIterator;
 import ms.ipp.iterator.NestedIterator;
 
 public class TestIterable {
+	private static void testNestedFiltered() {
+		// TODO: Can we extract any tests from it?
+		List<Map<String, Integer>> i = new ArrayList<>();
+		i.add(Iterables.makeMap(new String[] { "a", "b" }, new Integer[] { 1, 2 }));
+		i.add(Iterables.makeMap(new String[] { "a", "c" }, new Integer[] { 3, 4 }));
+
+		Iterator<Map.Entry<String, Integer>> it = new NestedIterator<>(i.iterator(), m -> m.entrySet().iterator());
+		it = FilteredIterator.distinct(it, Entry::getKey);
+		it.next();
+		System.out.println(i);
+		it.remove();
+		System.out.println(i);
+	}
 
 	@Test(expected = IllegalStateException.class)
 	public void testNested() {

@@ -1,7 +1,7 @@
 package ms.ipp.iterable.tree;
 
 import static ms.ipp.Algorithms.applyIf;
-import static ms.ipp.Algorithms.disabled;
+import static ms.ipp.Algorithms.error;
 import static ms.ipp.Algorithms.toKV;
 import static ms.ipp.Iterables.mapped;
 
@@ -54,7 +54,7 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 	 * @param clazz
 	 */
 	public SyntheticTree(Function<String, F> retriever, Class<F> clazz) {
-		this(retriever, disabled("Iterating not supported"), clazz);
+		this(retriever, error("Iterating not supported"), clazz);
 	}
 
 	public SyntheticTree(Function<String, F> retriever, Iterable<Entry<String, F>> iterable, Class<F> clazz) {
