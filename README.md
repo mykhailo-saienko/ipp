@@ -20,4 +20,7 @@ If you also want to run the included unit-tests, you have to have JUnit4 on your
 ## Getting started
 To familiarize with how the proxy-Iterators and proxy-Iterables work, I recommed looking at the unit test `ms.ipp.iterable.TestIterable.java`. The unit test `ms.ipp.iterable.TestTree.java` shows some simple use cases for the interface `Tree` and its concrete implementations.
 
-The documentation as well as simple tutorials are being currently created and will be added in the near future.
+The project javadoc is also available at 
+https://mykhailo-saienko.github.io/ipp/
+
+The simple tutorials are being currently created and will be added in the near future. But I recommend checking out comments on Iterators (in particular, `java.ipp.iterator.NestedIterator`, `java.ipp.iterable.tree.Tree`, `java.ipp.iterable.tree.DelegatingTree` to name the cooler ones) for some use cases!
