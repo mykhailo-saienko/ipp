@@ -68,7 +68,7 @@ public class SyntheticTree<F> extends AbstractTree<F> {
 	 * @param clazz
 	 */
 	public SyntheticTree(Function<String, F> retriever, Class<F> clazz) {
-		this(retriever, error("Iterating not supported"), clazz);
+		this(retriever, () -> error("Iterating not supported"), clazz);
 	}
 
 	/**
