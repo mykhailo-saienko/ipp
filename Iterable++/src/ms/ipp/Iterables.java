@@ -1091,8 +1091,8 @@ public class Iterables {
 	 * 
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static <T> Class<List<T>> listClass() {
-		return (Class<List<T>>) new ArrayList<T>().getClass();
+		return (Class) new ArrayList<T>().getClass();
 	}
 }

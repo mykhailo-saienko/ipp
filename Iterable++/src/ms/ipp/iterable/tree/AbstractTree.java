@@ -10,7 +10,8 @@ import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import ms.ipp.iterable.tree.path.PathManipulator;
 import ms.ipp.iterable.tree.path.StdPathManipulator;
@@ -35,7 +36,8 @@ import ms.ipp.iterable.tree.path.StdPathManipulator;
  * @param <F> as in {@link Tree}.
  */
 public abstract class AbstractTree<F> implements Tree<F> {
-	protected static final Logger logger = Logger.getLogger(AbstractTree.class);
+	// Returns a logger with the name of the calling class.
+	protected static final Logger logger = LogManager.getLogger();
 
 	/**
 	 * The recursion mode used by <code>Tree</code> in recursive manipulations.
@@ -141,9 +143,7 @@ public abstract class AbstractTree<F> implements Tree<F> {
 		if (value == null) {
 			throw new IllegalArgumentException("Cannot set '" + name + "' to null");
 		}
-		if (logger.isTraceEnabled()) {
-			logger.debug("Setting field '" + name + "' to value " + value + " of type " + clazz);
-		}
+		logger.debug("Setting field '{}' to value {} of type {}", name, value, clazz);
 
 		return processMember(this, name, n -> doSet(n, value, clazz), (e, n) -> e.set(n, value, clazz), null);
 	}

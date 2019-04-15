@@ -5,6 +5,7 @@ import static ms.ipp.Iterables.count;
 import static ms.ipp.Iterables.distinct;
 import static ms.ipp.Iterables.toBiIt;
 import static ms.ipp.base.KeyValue.KVP;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,7 +16,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import ms.ipp.Iterables;
 import ms.ipp.base.KeyValue;
@@ -38,7 +39,7 @@ public class TestIterable {
 		System.out.println(i);
 	}
 
-	@Test(expected = IllegalStateException.class)
+	@Test
 	public void testNested() {
 		Map<String, List<Integer>> source = new TreeMap<>();
 		source.put("a", new ArrayList<>());
@@ -70,7 +71,7 @@ public class TestIterable {
 		assertIterator(it.iterator(), KVP("d", 1));
 
 		// Remove before calling next should result into an IllegalStateError
-		it.iterator().remove();
+		assertThrows(IllegalStateException.class, () -> it.iterator().remove());
 	}
 
 	private BiIterable<String, Integer> createNested(Map<String, List<Integer>> source) {
@@ -78,7 +79,7 @@ public class TestIterable {
 				e -> new MappedIterator<>(e.getValue().iterator(), i -> new KeyValue<>(e.getKey(), i)));
 	}
 
-	@Test(expected = IllegalStateException.class)
+	@Test
 	public void testEmptyNested() {
 		Map<String, List<Integer>> source = new TreeMap<>();
 		source.put("a", new ArrayList<>());
@@ -87,10 +88,10 @@ public class TestIterable {
 		Assert.assertEquals(0, count(it));
 		Assert.assertTrue(!it.iterator().hasNext());
 		// Remove before calling next should result into an IllegalStateError
-		it.iterator().remove();
+		assertThrows(IllegalStateException.class, () -> it.iterator().remove());
 	}
 
-	@Test(expected = IllegalStateException.class)
+	@Test
 	public void testDistinct() {
 		BiIterable<String, Integer> distinct = createTestDistinct();
 
@@ -121,7 +122,7 @@ public class TestIterable {
 		assertIterator(distinct.iterator(), KVP("b", 2), KVP("a", 3));
 
 		// Remove before calling next should result into an IllegalStateError
-		distinct.iterator().remove();
+		assertThrows(IllegalStateException.class, () -> distinct.iterator().remove());
 	}
 
 	private BiIterable<String, Integer> createTestDistinct() {

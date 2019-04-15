@@ -6,7 +6,7 @@ import static ms.ipp.base.KeyValue.KVP;
 import static ms.ipp.iterable.TestIterable.assertIterator;
 
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import ms.ipp.base.KeyValue;
 import ms.ipp.iterable.BiIterable;
