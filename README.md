@@ -12,10 +12,10 @@ All *Tree*-implementations are heavily based on the above-mentioned wrappers for
 
 Some few `Iterator`-implementations duplicate the functionality of the *Apache Commons* library, in particular, of the package `org.apache.commons.collections.iterators`. However, the Apache Commons package works on the `Collection`-level, while our Project provides a more general view on Collections as `Iterable`. On top of that, to our knowledge, our `Tree` interface and its implementations are novel and are not contained in Apache Commons nor in any other publicly available library. 
 
-## Installation
-The project has the structure of an Eclipse-project without the .project-file. All you have to do is download the distribution, add log4j-1.2.15.jar to the classpath (it is included in the distribution in the `Iterator++/lib`-folder), and show to your IDE or compiler where the sources are (they are in the `Iterator++/src`-folder).
+## Installation Guide
+The first step is, of course, cloning the repository. 
 
-If you also want to run the included unit-tests, you have to have JUnit4 on your classpath. All tests are stored in the `Iterator++/test/src`-folder. There is a master TestSuite called `ms.ipp.TestSuiteIterable.java` which runs all unit tests at once.
+The project is Maven-based. If you want to build a jar file, issue the command "mvn package". To run all unit tests, issue "mvn test". If you want to run them manually, all tests are stored in the `Iterator++/test/src`-folder and there is a master TestSuite called `ms.ipp.TestSuiteIterable.java` which runs all unit tests at once. The unit tests are written in JUnit 5.
 
 ## Getting started
 To familiarize with how the proxy-Iterators and proxy-Iterables work, I recommed looking at the unit test `ms.ipp.iterable.TestIterable.java`. The unit test `ms.ipp.iterable.TestTree.java` shows some simple use cases for the interface `Tree` and its concrete implementations.
