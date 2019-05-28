@@ -131,6 +131,24 @@ public class Algorithms {
 	}
 
 	/**
+	 * If the {@code source} is not null and a given {@code Predicate} returns true
+	 * for it, applies a given {@code Function} to it and returns the result.
+	 * Otherwise, returns null.
+	 * 
+	 * @param source the source value. Null returns null.
+	 * @param pred   the Predicate to test the value against. Null disables the
+	 *               test.
+	 * @param func   the Function to apply, not null.
+	 * @return
+	 */
+	public static <T, U> U ignoreIfNullOrPred(T source, Predicate<? super T> pred, Function<? super T, U> func) {
+		if (source == null || (pred != null && pred.test(source))) {
+			return null;
+		}
+		return func.apply(source);
+	}
+
+	/**
 	 * Creates a new {@code BiConsumer} which calls a given {@code BiConsumer} only
 	 * if a given {@code BiPredicate} returns true.
 	 * 
@@ -242,6 +260,19 @@ public class Algorithms {
 	}
 
 	/**
+	 * Creates a {@code Function<T, V>} by concatenating a {@code Function<T, U>}
+	 * and a {@code Function<U, V>}.
+	 * 
+	 * @param func1 the first function, not null
+	 * @param func2 the second function, not null
+	 * @return
+	 */
+	public static <T, U, V> Function<T, V> concatFF(Function<? super T, ? extends U> func1,
+			Function<? super U, ? extends V> func2) {
+		return func1.andThen(func2)::apply;
+	}
+
+	/**
 	 * Creates a {@code Function} which calls a given {@code Consumer} prior to
 	 * apply a given {@code Function}.
 	 * 
@@ -258,7 +289,7 @@ public class Algorithms {
 
 	/**
 	 * Creates a {@code BiFunction} which calls a given {@code BiConsumer} prior to
-	 * apply a given {@code BiFunction}.
+	 * applying a given {@code BiFunction}.
 	 * 
 	 * @param proc the BiConsumer. If null, only the BiFunction is called
 	 * @param func the BiFunction, not null
@@ -271,22 +302,35 @@ public class Algorithms {
 		};
 	}
 
+	///////////////////////////////////////////////////////
+	/// ************* Supplier conversion ************* ///
+	///////////////////////////////////////////////////////
 	/**
-	 * If the {@code source} is not null and a given {@code Predicate} returns true
-	 * for it, applies a given {@code Function} to it and returns the result.
-	 * Otherwise, returns null.
+	 * Creates a {@code Supplier} which converts a given {@code Supplier}'s value by
+	 * applying a given {@code Function} to it. If the return value is null, the
+	 * conversion function is ignored.
 	 * 
-	 * @param source the source value. Null returns null.
-	 * @param pred   the Predicate to test the value against. Null disables the
-	 *               test.
-	 * @param func   the Function to apply, not null.
+	 * @param src  the Supplier, may be null
+	 * @param func the conversion function, not null
 	 * @return
 	 */
-	public static <T, U> U ignoreIfNullOrPred(T source, Predicate<? super T> pred, Function<? super T, U> func) {
-		if (source == null || (pred != null && pred.test(source))) {
-			return null;
-		}
-		return func.apply(source);
+	public static <T, U> Supplier<U> convert(Supplier<T> src, Function<T, U> func) {
+		return src == null ? null : () -> applyIf(s -> s != null, func).apply(src.get());
+	}
+
+	/**
+	 * Creates a {@code Supplier} which calls a given {@code Runnable} prior to
+	 * calling a given {@code Supplier}.
+	 * 
+	 * @param runnable the code to run, may be null
+	 * @param src      the Supplier, not null
+	 * @return
+	 */
+	public static <T> Supplier<T> concatS(Runnable r, Supplier<T> src) {
+		return r == null ? src : () -> {
+			r.run();
+			return src.get();
+		};
 	}
 
 	///////////////////////////////////////////////////////
