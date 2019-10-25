@@ -1,5 +1,6 @@
 package ms.ipp;
 
+import static ms.ipp.Algorithms.reduce;
 import static ms.ipp.Algorithms.toKV;
 import static ms.ipp.Streams.stream;
 
@@ -800,6 +801,21 @@ public class Iterables {
 		}
 	}
 
+	public static <T, U> U ifExistsApply(String name, Map<String, ? extends Object> attrs, Function<T, U> func,
+			Supplier<U> onMiss) {
+		return ifExistsApply(name, attrs, null, func, onMiss);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T, U> U ifExistsApply(String name, Map<String, ? extends Object> attrs, List<String> ignore,
+			Function<T, U> func, Supplier<U> onMiss) {
+		if (attrs.containsKey(name) && (ignore == null || !ignore.contains(name))) {
+			return func.apply((T) attrs.get(name));
+		} else {
+			return onMiss == null ? null : onMiss.get();
+		}
+	}
+
 	/**
 	 * Returns the list with a given key from a given map of lists. If the list
 	 * doesn't exist or is null, a new empty {@link ArrayList} is inserted into the
@@ -1044,6 +1060,14 @@ public class Iterables {
 		return result;
 	}
 
+	public static <T> Collection<T> collection(Iterable<T> source) {
+		if (source instanceof Collection) {
+			return (Collection<T>) source;
+		} else {
+			return list(source);
+		}
+	}
+
 	/**
 	 * Returns an intersection of two sets, i.e., a set containing elements
 	 * contained in at least one of the sets {@code s1}, {@code s2}. The original
@@ -1053,11 +1077,16 @@ public class Iterables {
 	 * @param s2 another original collection, not null
 	 * @return
 	 */
-	public static <T> Set<T> union(Collection<T> s1, Collection<T> s2) {
-		Set<T> temp = new HashSet<>();
-		temp.addAll(s1);
-		temp.addAll(s2);
-		return temp;
+	@SafeVarargs
+	public static <T> Set<T> union(Iterable<T>... elems) {
+		return union(Arrays.asList(elems));
+	}
+
+	public static <T> Set<T> union(Iterable<? extends Iterable<T>> sequence) {
+		return reduce((s, i) -> {
+			s.addAll(collection(i));
+			return s;
+		}, i -> new HashSet<>(collection(i)), sequence);
 	}
 
 	/**

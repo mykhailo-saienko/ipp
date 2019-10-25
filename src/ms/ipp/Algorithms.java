@@ -1,5 +1,6 @@
 package ms.ipp;
 
+import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -103,6 +104,18 @@ public class Algorithms {
 	}
 
 	/**
+	 * Creates a new {@code Function} which returns the result of a given
+	 * {@link Function} if a given {@code Predicate} returns true and null otherwise
+	 * 
+	 * @param pred a {@code Predicate} to use in the new {@code Function}, not null
+	 * @param func a {@code Function} to use in the new {@code Function}, not null
+	 * @return
+	 */
+	public static <T, U> Function<T, U> applyIf(Predicate<? super T> pred, Function<? super T, U> function) {
+		return t -> pred.test(t) ? function.apply(t) : null;
+	}
+
+	/**
 	 * Creates a new {@code BiFunction} which returns the result of a given
 	 * {@link BiFunction} if a given {@code BiPredicate} returns true and null
 	 * otherwise
@@ -116,18 +129,6 @@ public class Algorithms {
 	public static <T, U, V> BiFunction<T, U, V> applyIf(BiPredicate<? super T, ? super U> pred,
 			BiFunction<? super T, ? super U, V> func) {
 		return (t, u) -> pred.test(t, u) ? func.apply(t, u) : null;
-	}
-
-	/**
-	 * Creates a new {@code Function} which returns the result of a given
-	 * {@link Function} if a given {@code Predicate} returns true and null otherwise
-	 * 
-	 * @param pred a {@code Predicate} to use in the new {@code Function}, not null
-	 * @param func a {@code Function} to use in the new {@code Function}, not null
-	 * @return
-	 */
-	public static <T, U> Function<T, U> applyIf(Predicate<? super T> pred, Function<? super T, U> function) {
-		return t -> pred.test(t) ? function.apply(t) : null;
 	}
 
 	/**
@@ -659,13 +660,18 @@ public class Algorithms {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T, U> U accumulateNonNulls(BiFunction<U, T, U> accumulator, T... elems) {
+		return reduce(accumulator, t -> (U) t, Arrays.asList(elems));
+	}
+
+	public static <T, U> U reduce(BiFunction<U, T, U> accumulator, Function<T, U> initializer,
+			Iterable<? extends T> elems) {
 		U result = null;
 		for (T elem : elems) {
 			if (elem == null) {
 				continue;
 			}
 			if (result == null) {
-				result = (U) elem;
+				result = initializer.apply(elem);
 			} else {
 				result = accumulator.apply(result, elem);
 			}
