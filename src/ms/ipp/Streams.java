@@ -191,11 +191,10 @@ public class Streams {
 		return st.map(map);
 	}
 
-	public static <T> Stream<T> stream(Collection<T> it) {
-		return it == null ? null : it.stream();
-	}
-
 	public static <T> Stream<T> stream(Iterable<T> it) {
-		return it == null ? null : StreamSupport.stream(it.spliterator(), false);
+		if (it == null) {
+			return null;
+		}
+		return it instanceof Collection ? ((Collection<T>) it).stream() : StreamSupport.stream(it.spliterator(), false);
 	}
 }

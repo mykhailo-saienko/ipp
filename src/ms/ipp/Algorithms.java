@@ -690,4 +690,11 @@ public class Algorithms {
 		throw new IllegalArgumentException(message);
 	}
 
+	public static <U> U checkNotNull(U value, String name) {
+		if (value == null) {
+			error("Argument '" + name + "' cannot be null");
+		}
+		return value;
+	}
+
 }

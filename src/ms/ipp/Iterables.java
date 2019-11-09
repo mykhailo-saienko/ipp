@@ -21,6 +21,7 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -442,6 +443,31 @@ public class Iterables {
 		return collect(it, null, Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 	}
 
+	public static <T, U> Map<T, U> toHashMap(Iterable<? extends U> it, Function<? super U, T> keyGen) {
+		return collect(it, null, Collectors.toMap(keyGen::apply, e -> e));
+	}
+
+	public static <T, U> TreeMap<T, U> toTreeMap(Iterable<? extends U> it, Function<? super U, T> keyGen) {
+		return toTreeMap(it, keyGen, e -> e);
+	}
+
+	public static <T, U, V> TreeMap<T, V> toTreeMap(Iterable<? extends U> it, Function<? super U, T> keyGen,
+			Function<? super U, V> valueGen) {
+		return collect(it, null, toTreeMap(keyGen, valueGen));
+	}
+
+	private static <T> BinaryOperator<T> throwingMerger() {
+		return (u, v) -> {
+			throw new IllegalStateException(String.format("Duplicate key %s", u));
+		};
+	}
+
+	public static <T, K, U> Collector<T, ?, TreeMap<K, U>> toTreeMap(Function<? super T, ? extends K> keyMapper,
+			Function<? super T, ? extends U> valueMapper) {
+		// Adapted from Collectors.toMap(keyMapper, valueMapper)
+		return Collectors.toMap(keyMapper, valueMapper, throwingMerger(), TreeMap::new);
+	}
+
 	/**
 	 * Collects all elements from the {@code Iterable} which satisfy a given
 	 * {@code Predicate} by using a given {@link Collector}.
@@ -510,7 +536,7 @@ public class Iterables {
 	 * @param map
 	 * @return
 	 */
-	public static <T, U> List<U> map(Collection<T> items, Function<T, U> map) {
+	public static <T, U> List<U> map(Iterable<T> items, Function<T, U> map) {
 		return mapFilter(items, map, null);
 	}
 
@@ -551,7 +577,7 @@ public class Iterables {
 	 * @param map
 	 * @return
 	 */
-	public static <T, U> List<U> filterMap(Collection<T> items, Predicate<T> pred, Function<T, U> mapper) {
+	public static <T, U> List<U> filterMap(Iterable<T> items, Predicate<T> pred, Function<T, U> mapper) {
 		return Streams.list(Streams.mapped(Streams.filtered(stream(items), pred), mapper), null);
 	}
 
@@ -566,7 +592,7 @@ public class Iterables {
 	 * @param pred
 	 * @return
 	 */
-	public static <T, U> List<U> mapFilter(Collection<T> items, Function<T, U> map, Predicate<U> pred) {
+	public static <T, U> List<U> mapFilter(Iterable<T> items, Function<T, U> map, Predicate<U> pred) {
 		return Streams.list(Streams.mapped(stream(items), map), pred);
 	}
 
@@ -1018,7 +1044,6 @@ public class Iterables {
 	}
 
 	///// ************ Miscellaneous Helpers ************** /////
-
 	/**
 	 * Returns a symmetric difference of two sets, i.e. a set containing elements
 	 * from either {@code s1} or {@code s2} but filters out those that lie in both
