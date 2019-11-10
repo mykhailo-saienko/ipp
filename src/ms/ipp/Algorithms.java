@@ -660,10 +660,10 @@ public class Algorithms {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T, U> U accumulateNonNulls(BiFunction<U, T, U> accumulator, T... elems) {
-		return reduce(accumulator, t -> (U) t, Arrays.asList(elems));
+		return reduce(t -> (U) t, accumulator, Arrays.asList(elems));
 	}
 
-	public static <T, U> U reduce(BiFunction<U, T, U> accumulator, Function<T, U> initializer,
+	public static <T, U> U reduce(Function<T, U> initializer, BiFunction<U, T, U> accumulator,
 			Iterable<? extends T> elems) {
 		U result = null;
 		for (T elem : elems) {

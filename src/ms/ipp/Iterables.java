@@ -1108,10 +1108,10 @@ public class Iterables {
 	}
 
 	public static <T> Set<T> union(Iterable<? extends Iterable<T>> sequence) {
-		return reduce((s, i) -> {
+		return reduce(i -> new HashSet<>(collection(i)), (s, i) -> {
 			s.addAll(collection(i));
 			return s;
-		}, i -> new HashSet<>(collection(i)), sequence);
+		}, sequence);
 	}
 
 	/**

@@ -73,6 +73,11 @@ public class KeyValue<T, V> implements Map.Entry<T, V> {
 	}
 
 	@Override
+	public int hashCode() {
+		return (key == null ? 0 : key.hashCode()) ^ (value == null ? 0 : value.hashCode());
+	}
+
+	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof KeyValue)) {
 			return false;
