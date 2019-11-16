@@ -1015,12 +1015,7 @@ public class Iterables {
 	 *         {@code TreeMap},too. Otherwise, the result is a {@link HashMap}.
 	 */
 	public static <T, W, U> Map<W, U> mapKeys(Map<T, U> map, Function<T, W> keyMapper) {
-		Map<W, U> target = map instanceof NavigableMap ? new TreeMap<>() : new HashMap<>();
-
-		for (Map.Entry<T, U> e : map.entrySet()) {
-			target.put(keyMapper.apply(e.getKey()), e.getValue());
-		}
-		return target;
+		return mapKeysValues(map, keyMapper, v -> v);
 	}
 
 	/**
@@ -1035,12 +1030,18 @@ public class Iterables {
 	 *         Otherwise, the result is a {@link HashMap}.
 	 */
 	public static <T, U, V> Map<T, V> mapValues(Map<T, U> map, Function<U, V> valueMapper) {
-		Map<T, V> result = map instanceof NavigableMap ? new TreeMap<>() : new HashMap<>();
+		return mapKeysValues(map, k -> k, valueMapper);
+	}
+
+	public static <T, U, V, W> Map<V, W> mapKeysValues(Map<T, U> map, Function<T, V> keyMapper,
+			Function<U, W> valueMapper) {
+		Map<V, W> result = map instanceof NavigableMap ? new TreeMap<>() : new HashMap<>();
 
 		for (Map.Entry<T, U> e : map.entrySet()) {
-			result.put(e.getKey(), valueMapper.apply(e.getValue()));
+			result.put(keyMapper.apply(e.getKey()), valueMapper.apply(e.getValue()));
 		}
 		return result;
+
 	}
 
 	///// ************ Miscellaneous Helpers ************** /////
