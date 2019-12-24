@@ -28,6 +28,26 @@ public class Algorithms {
 	///////////////////////////////////////////////////////
 
 	/**
+	 * Creates a new {@code BiPredicate} which returns true if and only if at least
+	 * one of the given non-null {@code BiPredicates} returns true. Is equivalent
+	 * to:
+	 * 
+	 * <pre>
+	 * accumulateNonNulls(BiPredicate::or, predicates);
+	 * </pre>
+	 * 
+	 * @see #accumulateNonNulls(BiFunction, Object...)
+	 * @param preds a parameter array of {@link BiPredicate}s. Nulls in the array
+	 *              are ignored
+	 * @return null if all predicates are null or a concatenated BiPredicate
+	 *         otherwise.
+	 */
+	@SafeVarargs
+	public static <T, U> BiPredicate<T, U> or(BiPredicate<? super T, ? super U>... preds) {
+		return accumulateNonNulls(BiPredicate::or, preds);
+	}
+
+	/**
 	 * Creates a new {@code BiPredicate} which returns true if and only if all given
 	 * {@code BiPredicates} return true. Is equivalent to:
 	 * 
@@ -44,6 +64,25 @@ public class Algorithms {
 	@SafeVarargs
 	public static <T, U> BiPredicate<T, U> and(BiPredicate<? super T, ? super U>... preds) {
 		return accumulateNonNulls(BiPredicate::and, preds);
+	}
+
+	/**
+	 * Creates a new {@code Predicate} which returns true if and only if at least
+	 * one of the given non-null {@code Predicates} returns true. Is equivalent to:
+	 * 
+	 * <pre>
+	 * accumulateNonNulls(Predicate::or, predicates);
+	 * </pre>
+	 * 
+	 * @see #accumulateNonNulls(BiFunction, Object...)
+	 * @param preds a parameter array of {@link Predicate}s. Nulls in the array are
+	 *              ignored
+	 * @return null if all predicates are null or a concatenated Predicate
+	 *         otherwise.
+	 */
+	@SafeVarargs
+	public static <T> Predicate<T> or(Predicate<? super T>... preds) {
+		return accumulateNonNulls(Predicate::or, preds);
 	}
 
 	/**
@@ -111,7 +150,8 @@ public class Algorithms {
 	 * @param func a {@code Function} to use in the new {@code Function}, not null
 	 * @return
 	 */
-	public static <T, U> Function<T, U> applyIf(Predicate<? super T> pred, Function<? super T, U> function) {
+	public static <T, U> Function<T, U> applyIf(Predicate<? super T> pred,
+			Function<? super T, U> function) {
 		return t -> pred.test(t) ? function.apply(t) : null;
 	}
 
@@ -142,7 +182,8 @@ public class Algorithms {
 	 * @param func   the Function to apply, not null.
 	 * @return
 	 */
-	public static <T, U> U ignoreIfNullOrPred(T source, Predicate<? super T> pred, Function<? super T, U> func) {
+	public static <T, U> U ignoreIfNullOrPred(T source, Predicate<? super T> pred,
+			Function<? super T, U> func) {
 		if (source == null || (pred != null && pred.test(source))) {
 			return null;
 		}
@@ -224,7 +265,8 @@ public class Algorithms {
 	 * @param proc the action, not null
 	 * @return
 	 */
-	public static <T, U> Consumer<T> concatC(Function<? super T, U> func, Consumer<? super U> proc) {
+	public static <T, U> Consumer<T> concatC(Function<? super T, U> func,
+			Consumer<? super U> proc) {
 		return t -> proc.accept(func.apply(t));
 	}
 
@@ -239,8 +281,8 @@ public class Algorithms {
 	 * @param proc  the action, not null
 	 * @return
 	 */
-	public static <T, U, R> Consumer<R> concatC(Function<? super R, T> func1, Function<? super R, U> func2,
-			BiConsumer<? super T, ? super U> proc) {
+	public static <T, U, R> Consumer<R> concatC(Function<? super R, T> func1,
+			Function<? super R, U> func2, BiConsumer<? super T, ? super U> proc) {
 		return r -> proc.accept(func1.apply(r), func2.apply(r));
 	}
 
@@ -255,8 +297,8 @@ public class Algorithms {
 	 * @param func  the BiFunction, not null
 	 * @return
 	 */
-	public static <T, U, V, R> Function<R, V> concatF(Function<? super R, T> mod1, Function<? super R, U> mod2,
-			BiFunction<? super T, ? super U, V> func) {
+	public static <T, U, V, R> Function<R, V> concatF(Function<? super R, T> mod1,
+			Function<? super R, U> mod2, BiFunction<? super T, ? super U, V> func) {
 		return r -> func.apply(mod1.apply(r), mod2.apply(r));
 	}
 
@@ -296,7 +338,8 @@ public class Algorithms {
 	 * @param func the BiFunction, not null
 	 * @return
 	 */
-	public static <T, U, V> BiFunction<T, U, V> concatF(BiConsumer<T, U> proc, BiFunction<T, U, V> func) {
+	public static <T, U, V> BiFunction<T, U, V> concatF(BiConsumer<T, U> proc,
+			BiFunction<T, U, V> func) {
 		return proc == null ? func : (t, u) -> {
 			proc.accept(t, u);
 			return func.apply(t, u);
@@ -616,7 +659,8 @@ public class Algorithms {
 	 * @param func the BiFunction to convert. Null returns null
 	 * @return
 	 */
-	public static <T, U, V> Function<Entry<T, U>, V> toKV(BiFunction<? super T, ? super U, V> func) {
+	public static <T, U, V> Function<Entry<T, U>, V> toKV(
+			BiFunction<? super T, ? super U, V> func) {
 		return func == null ? null : concatF(Entry::getKey, Entry::getValue, func);
 	}
 
@@ -639,7 +683,8 @@ public class Algorithms {
 	 * @param func2 the second Function, not null
 	 * @return
 	 */
-	public static <T, V, W> Function<T, Entry<V, W>> toKV(Function<? super T, V> func1, Function<? super T, W> func2) {
+	public static <T, V, W> Function<T, Entry<V, W>> toKV(Function<? super T, V> func1,
+			Function<? super T, W> func2) {
 		return concatF(func1, func2, KeyValue<V, W>::new);
 	}
 
