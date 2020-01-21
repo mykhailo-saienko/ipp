@@ -1,5 +1,6 @@
 package ms.ipp;
 
+import static java.lang.System.arraycopy;
 import static ms.ipp.Algorithms.reduce;
 import static ms.ipp.Algorithms.toKV;
 import static ms.ipp.Streams.stream;
@@ -26,6 +27,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -72,7 +74,8 @@ public class Iterables {
 	 * @param pred
 	 * @return
 	 */
-	public static <T, U> BiIterable<T, U> filtered(BiIterable<T, U> it, BiPredicate<? super T, ? super U> pred) {
+	public static <T, U> BiIterable<T, U> filtered(BiIterable<T, U> it,
+			BiPredicate<? super T, ? super U> pred) {
 		return pred == null ? it : toBiIt(filtered(removeProxies(it), toKV(pred)));
 	}
 
@@ -98,7 +101,8 @@ public class Iterables {
 	 * @param onDelete
 	 * @return
 	 */
-	public static <T, U> BiIterable<T, U> deleteHook(BiIterable<T, U> it, BiConsumer<? super T, ? super U> onDelete) {
+	public static <T, U> BiIterable<T, U> deleteHook(BiIterable<T, U> it,
+			BiConsumer<? super T, ? super U> onDelete) {
 		return toBiIt(deleteHook(removeProxies(it), toKV(onDelete)));
 	}
 
@@ -150,7 +154,8 @@ public class Iterables {
 	 *             returns true.
 	 * @return
 	 */
-	public static <T, U> Entry<T, U> unique(BiIterable<T, U> it, BiPredicate<? super T, ? super U> pred) {
+	public static <T, U> Entry<T, U> unique(BiIterable<T, U> it,
+			BiPredicate<? super T, ? super U> pred) {
 		return unique(it, toKV(pred));
 	}
 
@@ -163,7 +168,8 @@ public class Iterables {
 	 *             returns true
 	 * @return
 	 */
-	public static <T, U> Entry<T, U> first(BiIterable<T, U> it, BiPredicate<? super T, ? super U> pred) {
+	public static <T, U> Entry<T, U> first(BiIterable<T, U> it,
+			BiPredicate<? super T, ? super U> pred) {
 		return first(it, toKV(pred));
 	}
 
@@ -186,7 +192,8 @@ public class Iterables {
 	 * @param pred the predicate. If null, all elements will be removed
 	 * @return true if at least one element has been removed
 	 */
-	public static <T, U> boolean removeFrom(BiIterable<T, U> it, BiPredicate<? super T, ? super U> pred) {
+	public static <T, U> boolean removeFrom(BiIterable<T, U> it,
+			BiPredicate<? super T, ? super U> pred) {
 		return removeFrom(it, toKV(pred));
 	}
 
@@ -198,7 +205,8 @@ public class Iterables {
 	 * @param pred the predicate. If null, the original BiIterable is used
 	 * @return
 	 */
-	public static <T, U> List<Entry<T, U>> list(BiIterable<T, U> it, BiPredicate<? super T, ? super U> pred) {
+	public static <T, U> List<Entry<T, U>> list(BiIterable<T, U> it,
+			BiPredicate<? super T, ? super U> pred) {
 		return list(it, toKV(pred));
 	}
 
@@ -210,13 +218,13 @@ public class Iterables {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T, U> BiIterable<T, U> toBiIt(Iterable<Entry<T, U>> it) {
+	public static <T, U> BiIterable<T, U> toBiIt(Iterable<? extends Entry<T, U>> it) {
 		if (it == null) {
 			return null;
 		} else if (it instanceof BiIterable) {
 			return (BiIterable<T, U>) it;
 		} else {
-			return new ProxyBiIterable<>(it);
+			return new ProxyBiIterable<>((Iterable<Entry<T, U>>) it);
 		}
 	}
 
@@ -443,16 +451,18 @@ public class Iterables {
 		return collect(it, null, Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 	}
 
-	public static <T, U> Map<T, U> toHashMap(Iterable<? extends U> it, Function<? super U, T> keyGen) {
+	public static <T, U> Map<T, U> toHashMap(Iterable<? extends U> it,
+			Function<? super U, T> keyGen) {
 		return collect(it, null, Collectors.toMap(keyGen::apply, e -> e));
 	}
 
-	public static <T, U> TreeMap<T, U> toTreeMap(Iterable<? extends U> it, Function<? super U, T> keyGen) {
+	public static <T, U> TreeMap<T, U> toTreeMap(Iterable<? extends U> it,
+			Function<? super U, T> keyGen) {
 		return toTreeMap(it, keyGen, e -> e);
 	}
 
-	public static <T, U, V> TreeMap<T, V> toTreeMap(Iterable<? extends U> it, Function<? super U, T> keyGen,
-			Function<? super U, V> valueGen) {
+	public static <T, U, V> TreeMap<T, V> toTreeMap(Iterable<? extends U> it,
+			Function<? super U, T> keyGen, Function<? super U, V> valueGen) {
 		return collect(it, null, toTreeMap(keyGen, valueGen));
 	}
 
@@ -462,7 +472,8 @@ public class Iterables {
 		};
 	}
 
-	public static <T, K, U> Collector<T, ?, TreeMap<K, U>> toTreeMap(Function<? super T, ? extends K> keyMapper,
+	public static <T, K, U> Collector<T, ?, TreeMap<K, U>> toTreeMap(
+			Function<? super T, ? extends K> keyMapper,
 			Function<? super T, ? extends U> valueMapper) {
 		// Adapted from Collectors.toMap(keyMapper, valueMapper)
 		return Collectors.toMap(keyMapper, valueMapper, throwingMerger(), TreeMap::new);
@@ -477,7 +488,8 @@ public class Iterables {
 	 * @param collector the Collector, as it is used by @{code Stream::collect}
 	 *                  methods
 	 */
-	public static <T, R> R collect(Iterable<T> it, Predicate<? super T> pred, Collector<T, ?, R> collector) {
+	public static <T, R> R collect(Iterable<T> it, Predicate<? super T> pred,
+			Collector<T, ?, R> collector) {
 		return Streams.collect(stream(it), pred, collector);
 	}
 
@@ -491,7 +503,8 @@ public class Iterables {
 	 *                  methods.
 	 * @param n         the number of elements to collect
 	 */
-	public static <T, R> R collect(Iterable<T> it, Predicate<? super T> pred, Collector<T, ?, R> collector, int n) {
+	public static <T, R> R collect(Iterable<T> it, Predicate<? super T> pred,
+			Collector<T, ?, R> collector, int n) {
 		return Streams.collect(stream(it), pred, collector, n);
 	}
 
@@ -577,7 +590,8 @@ public class Iterables {
 	 * @param map
 	 * @return
 	 */
-	public static <T, U> List<U> filterMap(Iterable<T> items, Predicate<T> pred, Function<T, U> mapper) {
+	public static <T, U> List<U> filterMap(Iterable<T> items, Predicate<T> pred,
+			Function<T, U> mapper) {
 		return Streams.list(Streams.mapped(Streams.filtered(stream(items), pred), mapper), null);
 	}
 
@@ -592,7 +606,8 @@ public class Iterables {
 	 * @param pred
 	 * @return
 	 */
-	public static <T, U> List<U> mapFilter(Iterable<T> items, Function<T, U> map, Predicate<U> pred) {
+	public static <T, U> List<U> mapFilter(Iterable<T> items, Function<T, U> map,
+			Predicate<U> pred) {
 		return Streams.list(Streams.mapped(stream(items), map), pred);
 	}
 
@@ -669,8 +684,8 @@ public class Iterables {
 	 * @param serializer a BiConsumer which should add to a StringBuffer the
 	 *                   serialised version on the element passed, not null
 	 */
-	public static <T> void appendList(StringBuffer buf, Collection<? extends T> items, String op, String cl, String sep,
-			BiConsumer<T, StringBuffer> serializer) {
+	public static <T> void appendList(StringBuffer buf, Collection<? extends T> items, String op,
+			String cl, String sep, BiConsumer<T, StringBuffer> serializer) {
 		buf.append(op);
 
 		for (T t : items) {
@@ -702,8 +717,8 @@ public class Iterables {
 	 *                   serialised version on the element passed, not null
 	 * @return
 	 */
-	public static <T> String appendList(Collection<? extends T> items, String op, String cl, String sep,
-			BiConsumer<T, StringBuffer> serializer) {
+	public static <T> String appendList(Collection<? extends T> items, String op, String cl,
+			String sep, BiConsumer<T, StringBuffer> serializer) {
 		StringBuffer sb = new StringBuffer(items.size() * 1000);
 		appendList(sb, items, op, cl, sep, serializer);
 		return sb.toString();
@@ -726,8 +741,8 @@ public class Iterables {
 	 *                   collection element passed, not null
 	 * @return
 	 */
-	public static <T> String appendList(Collection<? extends T> items, String op, String cl, String sep,
-			Function<T, String> serializer) {
+	public static <T> String appendList(Collection<? extends T> items, String op, String cl,
+			String sep, Function<T, String> serializer) {
 		return appendList(items, op, cl, sep, (s, sb) -> sb.append(serializer.apply(s)));
 	}
 
@@ -805,7 +820,8 @@ public class Iterables {
 	 * @param proc  the action to be performed on the element with a given key, not
 	 *              null.
 	 */
-	public static <T> void ifExistsDo(String name, Map<String, ? extends Object> attrs, Consumer<T> proc) {
+	public static <T> void ifExistsDo(String name, Map<String, ? extends Object> attrs,
+			Consumer<T> proc) {
 		ifExistsDo(name, attrs, null, proc);
 	}
 
@@ -820,21 +836,21 @@ public class Iterables {
 	 *               null.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> void ifExistsDo(String name, Map<String, ? extends Object> attrs, List<String> ignore,
-			Consumer<T> proc) {
+	public static <T> void ifExistsDo(String name, Map<String, ? extends Object> attrs,
+			List<String> ignore, Consumer<T> proc) {
 		if (attrs.containsKey(name) && (ignore == null || !ignore.contains(name))) {
 			proc.accept((T) attrs.get(name));
 		}
 	}
 
-	public static <T, U> U ifExistsApply(String name, Map<String, ? extends Object> attrs, Function<T, U> func,
-			Supplier<U> onMiss) {
+	public static <T, U> U ifExistsApply(String name, Map<String, ? extends Object> attrs,
+			Function<T, U> func, Supplier<U> onMiss) {
 		return ifExistsApply(name, attrs, null, func, onMiss);
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T, U> U ifExistsApply(String name, Map<String, ? extends Object> attrs, List<String> ignore,
-			Function<T, U> func, Supplier<U> onMiss) {
+	public static <T, U> U ifExistsApply(String name, Map<String, ? extends Object> attrs,
+			List<String> ignore, Function<T, U> func, Supplier<U> onMiss) {
 		if (attrs.containsKey(name) && (ignore == null || !ignore.contains(name))) {
 			return func.apply((T) attrs.get(name));
 		} else {
@@ -921,8 +937,8 @@ public class Iterables {
 				return def.get();
 			}
 		} catch (ClassCastException e) {
-			throw new IllegalArgumentException(
-					"Cannot convert attribute " + obj + " of type " + obj.getClass().getSimpleName());
+			throw new IllegalArgumentException("Cannot convert attribute " + obj + " of type "
+					+ obj.getClass().getSimpleName());
 		}
 	}
 
@@ -948,8 +964,8 @@ public class Iterables {
 				return def.get();
 			}
 		} catch (ClassCastException e) {
-			throw new IllegalArgumentException(
-					"Cannot convert attribute " + obj + " of type " + obj.getClass().getSimpleName());
+			throw new IllegalArgumentException("Cannot convert attribute " + obj + " of type "
+					+ obj.getClass().getSimpleName());
 		}
 	}
 
@@ -971,14 +987,27 @@ public class Iterables {
 			throw new IllegalArgumentException("Keys and values must both be not null");
 		}
 		if (keys.length != values.length) {
-			throw new IllegalArgumentException("Keys and values must be of the same length! Keys has length "
-					+ keys.length + "; values: " + values.length);
+			throw new IllegalArgumentException(
+					"Keys and values must be of the same length! Keys has length " + keys.length
+							+ "; values: " + values.length);
 		}
 		Map<T, V> map = new HashMap<T, V>();
 		for (int i = 0; i < keys.length; i++) {
 			map.put(keys[i], values[i]);
 		}
 		return map;
+	}
+
+	/**
+	 * Returns a new (modifiable) {@code HashMap} containing only those entries from
+	 * the original {@code Map} whose keys match a given pattern.
+	 * 
+	 * @param map
+	 * @param pattern
+	 * @return
+	 */
+	public static <V> Map<String, V> filter(Map<String, V> map, Pattern pattern) {
+		return filter(map, Algorithms.ignore2(pattern.asMatchPredicate()));
 	}
 
 	/**
@@ -1054,7 +1083,8 @@ public class Iterables {
 	 * @param s2 another original collection, not null
 	 * @return
 	 */
-	public static <T> Set<T> symmDiff(final Collection<? extends T> s1, final Collection<? extends T> s2) {
+	public static <T> Set<T> symmDiff(final Collection<? extends T> s1,
+			final Collection<? extends T> s2) {
 		Set<T> symmetricDiff = new HashSet<T>(s1);
 		symmetricDiff.addAll(s2);
 		Set<T> tmp = new HashSet<T>(s1);
@@ -1149,5 +1179,19 @@ public class Iterables {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static <T> Class<List<T>> listClass() {
 		return (Class) new ArrayList<T>().getClass();
+	}
+
+	@SafeVarargs
+	public
+	static <T> T[] merge(boolean swap, T[] arr, T... moreElements) {
+		if (moreElements == null || moreElements.length == 0) {
+			return arr;
+		}
+		T[] prefixElems = swap ? moreElements : arr;
+		T[] suffixElems = swap ? arr : moreElements;
+	
+		T[] result = Arrays.copyOf(prefixElems, arr.length + moreElements.length);
+		arraycopy(arr, 0, result, prefixElems.length, suffixElems.length);
+		return result;
 	}
 }
