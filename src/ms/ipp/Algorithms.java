@@ -1,6 +1,7 @@
 package ms.ipp;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -36,7 +37,7 @@ public class Algorithms {
 	 * accumulateNonNulls(BiPredicate::or, predicates);
 	 * </pre>
 	 * 
-	 * @see #accumulateNonNulls(BiFunction, Object...)
+	 * @see #reduceNonNulls(BiFunction, Object...)
 	 * @param preds a parameter array of {@link BiPredicate}s. Nulls in the array
 	 *              are ignored
 	 * @return null if all predicates are null or a concatenated BiPredicate
@@ -44,7 +45,7 @@ public class Algorithms {
 	 */
 	@SafeVarargs
 	public static <T, U> BiPredicate<T, U> or(BiPredicate<? super T, ? super U>... preds) {
-		return accumulateNonNulls(BiPredicate::or, preds);
+		return reduceNonNulls(BiPredicate::or, Arrays.asList(preds));
 	}
 
 	/**
@@ -55,7 +56,7 @@ public class Algorithms {
 	 * accumulateNonNulls(BiPredicate::and, predicates);
 	 * </pre>
 	 * 
-	 * @see #accumulateNonNulls(BiFunction, Object...)
+	 * @see #reduceNonNulls(BiFunction, Object...)
 	 * @param preds a parameter array of {@link BiPredicate}s. Nulls in the array
 	 *              are ignored
 	 * @return null if all predicates are null or a concatenated BiPredicate
@@ -63,7 +64,7 @@ public class Algorithms {
 	 */
 	@SafeVarargs
 	public static <T, U> BiPredicate<T, U> and(BiPredicate<? super T, ? super U>... preds) {
-		return accumulateNonNulls(BiPredicate::and, preds);
+		return reduceNonNulls(BiPredicate::and, Arrays.asList(preds));
 	}
 
 	/**
@@ -74,7 +75,7 @@ public class Algorithms {
 	 * accumulateNonNulls(Predicate::or, predicates);
 	 * </pre>
 	 * 
-	 * @see #accumulateNonNulls(BiFunction, Object...)
+	 * @see #reduceNonNulls(BiFunction, Object...)
 	 * @param preds a parameter array of {@link Predicate}s. Nulls in the array are
 	 *              ignored
 	 * @return null if all predicates are null or a concatenated Predicate
@@ -82,7 +83,7 @@ public class Algorithms {
 	 */
 	@SafeVarargs
 	public static <T> Predicate<T> or(Predicate<? super T>... preds) {
-		return accumulateNonNulls(Predicate::or, preds);
+		return reduceNonNulls(Predicate::or, Arrays.asList(preds));
 	}
 
 	/**
@@ -93,7 +94,7 @@ public class Algorithms {
 	 * accumulateNonNulls(Predicate::and, predicates);
 	 * </pre>
 	 * 
-	 * @see #accumulateNonNulls(BiFunction, Object...)
+	 * @see #reduceNonNulls(BiFunction, Object...)
 	 * @param preds a parameter array of {@link Predicate}s. Nulls in the array are
 	 *              ignored
 	 * @return null if all predicates are null or a concatenated Predicate
@@ -101,7 +102,7 @@ public class Algorithms {
 	 */
 	@SafeVarargs
 	public static <T> Predicate<T> and(Predicate<? super T>... preds) {
-		return accumulateNonNulls(Predicate::and, preds);
+		return reduceNonNulls(Predicate::and, Arrays.asList(preds));
 	}
 
 	/**
@@ -112,7 +113,7 @@ public class Algorithms {
 	 * accumulateNonNulls(BiConsumer::andThen, predicates);
 	 * </pre>
 	 * 
-	 * @see #accumulateNonNulls(BiFunction, Object...)
+	 * @see #reduceNonNulls(BiFunction, Object...)
 	 * @param procs a parameter array of {@link BiConsumers}s. Nulls in the array
 	 *              are ignored
 	 * @return null if all BiConsumers are null or a concatenated {@code BiConsumer}
@@ -120,7 +121,7 @@ public class Algorithms {
 	 */
 	@SafeVarargs
 	public static <T, U> BiConsumer<T, U> seq(BiConsumer<? super T, ? super U>... procs) {
-		return accumulateNonNulls(BiConsumer::andThen, procs);
+		return reduceNonNulls(BiConsumer::andThen, Arrays.asList(procs));
 	}
 
 	/**
@@ -131,15 +132,15 @@ public class Algorithms {
 	 * accumulateNonNulls(Consumer::andThen, predicates);
 	 * </pre>
 	 * 
-	 * @see #accumulateNonNulls(BiFunction, Object...)
+	 * @see #reduceNonNulls(BiFunction, Object...)
 	 * @param procs a parameter array of {@link Consumers}s. Nulls in the array are
 	 *              ignored
 	 * @return null if all Consumers are null or a concatenated {@code Consumer}
 	 *         otherwise.
 	 */
 	@SafeVarargs
-	public static <T> Consumer<T> seq(Consumer<? super T>... predicates) {
-		return accumulateNonNulls(Consumer::andThen, predicates);
+	public static <T> Consumer<T> seq(Consumer<? super T>... procs) {
+		return reduceNonNulls(Consumer::andThen, Arrays.asList(procs));
 	}
 
 	/**
@@ -704,20 +705,43 @@ public class Algorithms {
 	 *         {@code accumulator}.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T, U> U accumulateNonNulls(BiFunction<U, T, U> accumulator, T... elems) {
-		return reduce(t -> (U) t, accumulator, Arrays.asList(elems));
+	public static <T, U> U reduceNonNulls(BiFunction<U, T, U> accumulator,
+			Iterable<? extends T> elems) {
+		return reduce(t -> t != null, t -> (U) t, accumulator, elems);
 	}
 
-	public static <T, U> U reduce(Function<T, U> initializer, BiFunction<U, T, U> accumulator,
-			Iterable<? extends T> elems) {
+	public static <T, U> U reduce(Predicate<T> pred, Function<T, U> initializer,
+			BiFunction<U, T, U> accumulator, Iterable<? extends T> elems) {
+		if (pred == null) {
+			pred = s -> true;
+		}
+
+		// initialize the first element
+		int count = 0;
+		Iterator<? extends T> it = elems.iterator();
 		U result = null;
-		for (T elem : elems) {
-			if (elem == null) {
-				continue;
-			}
-			if (result == null) {
-				result = initializer.apply(elem);
+		while (true) {
+			if (it.hasNext()) {
+				count++;
+				T elem = it.next();
+				if (pred.test(elem)) {
+					result = initializer.apply(elem);
+					break;
+				}
 			} else {
+				if (count == 0) {
+					error("Cannot pass empty iterable to reduce");
+				} else {
+					error("None of the " + count
+							+ " elements satisfy a given predicate for reduce");
+				}
+			}
+		}
+
+		// iterate over the rest
+		while (it.hasNext()) {
+			T elem = it.next();
+			if (pred.test(elem)) {
 				result = accumulator.apply(result, elem);
 			}
 		}

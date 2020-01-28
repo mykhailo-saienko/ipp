@@ -1,6 +1,7 @@
 package ms.ipp;
 
 import static java.lang.System.arraycopy;
+import static java.util.Arrays.asList;
 import static ms.ipp.Algorithms.reduce;
 import static ms.ipp.Algorithms.toKV;
 import static ms.ipp.Streams.stream;
@@ -719,7 +720,7 @@ public class Iterables {
 	 */
 	public static <T> String appendList(Collection<? extends T> items, String op, String cl,
 			String sep, BiConsumer<T, StringBuffer> serializer) {
-		StringBuffer sb = new StringBuffer(items.size() * 1000);
+		var sb = new StringBuffer(items.size() * 1000);
 		appendList(sb, items, op, cl, sep, serializer);
 		return sb.toString();
 	}
@@ -882,7 +883,7 @@ public class Iterables {
 	 * @return
 	 */
 	public static <T, U> U getInsert(T key, Map<T, U> map, Supplier<U> onNull) {
-		U value = map.get(key);
+		var value = map.get(key);
 		if (value == null) {
 			value = onNull.get();
 			map.put(key, value);
@@ -991,7 +992,7 @@ public class Iterables {
 					"Keys and values must be of the same length! Keys has length " + keys.length
 							+ "; values: " + values.length);
 		}
-		Map<T, V> map = new HashMap<T, V>();
+		var map = new HashMap<T, V>();
 		for (int i = 0; i < keys.length; i++) {
 			map.put(keys[i], values[i]);
 		}
@@ -1021,7 +1022,23 @@ public class Iterables {
 	 * @return
 	 */
 	public static <K, V> Map<K, V> filter(Map<K, V> map, BiPredicate<? super K, ? super V> pred) {
-		Map<K, V> result = new HashMap<>();
+		return filterInto(map, pred, new HashMap<>());
+	}
+
+	/**
+	 * Puts all entries from a given {@link Map} which satisfy a given
+	 * {@code BiPredicate} into a given result {@link Map} and returns the latter
+	 * (for convenience).
+	 * 
+	 * @param map    the original Map, not null
+	 * @param pred   the BiPredicate accepting the entry's key as the first and the
+	 *               value as the second argument. Null returns a copy of the
+	 *               original Map.
+	 * @param result the map to put filtered entries into, not null
+	 * @return
+	 */
+	public static <K, V> Map<K, V> filterInto(Map<K, V> map, BiPredicate<? super K, ? super V> pred,
+			Map<K, V> result) {
 		if (pred == null) {
 			pred = (a, b) -> true;
 		}
@@ -1102,12 +1119,12 @@ public class Iterables {
 	 * @param s2 another original collection, not null
 	 * @return
 	 */
-	public static <T> List<T> intersection(Collection<T> s1, Collection<T> s2) {
-		List<T> result = new ArrayList<T>();
+	public static <T> Set<T> intersection(Collection<T> s1, Collection<T> s2) {
+		var result = new HashSet<T>();
 		// lookups are O(1) in a set and O(n) in a list. So convert to a set.
 		// It is better to have 2*O(n) than O(n^2).
-		Set<T> set2 = new HashSet<>(s2);
-		for (T t : s1) {
+		var set2 = new HashSet<>(s2);
+		for (var t : s1) {
 			if (set2.contains(t)) {
 				result.add(t);
 			}
@@ -1135,11 +1152,11 @@ public class Iterables {
 	 */
 	@SafeVarargs
 	public static <T> Set<T> union(Iterable<T>... elems) {
-		return union(Arrays.asList(elems));
+		return union(asList(elems));
 	}
 
 	public static <T> Set<T> union(Iterable<? extends Iterable<T>> sequence) {
-		return reduce(i -> new HashSet<>(collection(i)), (s, i) -> {
+		return reduce(null, i -> new HashSet<>(collection(i)), (s, i) -> {
 			s.addAll(collection(i));
 			return s;
 		}, sequence);
@@ -1182,15 +1199,14 @@ public class Iterables {
 	}
 
 	@SafeVarargs
-	public
-	static <T> T[] merge(boolean swap, T[] arr, T... moreElements) {
+	public static <T> T[] merge(boolean swap, T[] arr, T... moreElements) {
 		if (moreElements == null || moreElements.length == 0) {
 			return arr;
 		}
-		T[] prefixElems = swap ? moreElements : arr;
-		T[] suffixElems = swap ? arr : moreElements;
-	
-		T[] result = Arrays.copyOf(prefixElems, arr.length + moreElements.length);
+		var prefixElems = swap ? moreElements : arr;
+		var suffixElems = swap ? arr : moreElements;
+
+		var result = Arrays.copyOf(prefixElems, arr.length + moreElements.length);
 		arraycopy(arr, 0, result, prefixElems.length, suffixElems.length);
 		return result;
 	}
