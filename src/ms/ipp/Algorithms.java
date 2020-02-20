@@ -1,5 +1,8 @@
 package ms.ipp;
 
+import static ms.ipp.Iterables.filtered;
+import static ms.ipp.Iterables.list;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -34,7 +37,7 @@ public class Algorithms {
 	 * to:
 	 * 
 	 * <pre>
-	 * accumulateNonNulls(BiPredicate::or, predicates);
+	 * reduceNonNulls(BiPredicate::or, Arrays.asList(preds));
 	 * </pre>
 	 * 
 	 * @see #reduceNonNulls(BiFunction, Object...)
@@ -53,7 +56,7 @@ public class Algorithms {
 	 * {@code BiPredicates} return true. Is equivalent to:
 	 * 
 	 * <pre>
-	 * accumulateNonNulls(BiPredicate::and, predicates);
+	 * reduceNonNulls(BiPredicate::and, Arrays.asList(preds));
 	 * </pre>
 	 * 
 	 * @see #reduceNonNulls(BiFunction, Object...)
@@ -72,7 +75,7 @@ public class Algorithms {
 	 * one of the given non-null {@code Predicates} returns true. Is equivalent to:
 	 * 
 	 * <pre>
-	 * accumulateNonNulls(Predicate::or, predicates);
+	 * reduceNonNulls(Predicate::or, Arrays.asList(preds));
 	 * </pre>
 	 * 
 	 * @see #reduceNonNulls(BiFunction, Object...)
@@ -91,7 +94,7 @@ public class Algorithms {
 	 * {@code Predicates} return true. Is equivalent to:
 	 * 
 	 * <pre>
-	 * accumulateNonNulls(Predicate::and, predicates);
+	 * reduceNonNulls(Predicate::and, Arrays.asList(preds));
 	 * </pre>
 	 * 
 	 * @see #reduceNonNulls(BiFunction, Object...)
@@ -110,7 +113,7 @@ public class Algorithms {
 	 * the order of their appearance as arguments. Is equivalent to:
 	 * 
 	 * <pre>
-	 * accumulateNonNulls(BiConsumer::andThen, predicates);
+	 * reduceNonNulls(BiConsumer::andThen, Arrays.asList(procs));
 	 * </pre>
 	 * 
 	 * @see #reduceNonNulls(BiFunction, Object...)
@@ -129,7 +132,7 @@ public class Algorithms {
 	 * order of their appearance as arguments. Is equivalent to:
 	 * 
 	 * <pre>
-	 * accumulateNonNulls(Consumer::andThen, predicates);
+	 * reduceNonNulls(Consumer::andThen, Arrays.asList(procs));
 	 * </pre>
 	 * 
 	 * @see #reduceNonNulls(BiFunction, Object...)
@@ -707,43 +710,45 @@ public class Algorithms {
 	@SuppressWarnings("unchecked")
 	public static <T, U> U reduceNonNulls(BiFunction<U, T, U> accumulator,
 			Iterable<? extends T> elems) {
-		return reduce(t -> t != null, t -> (U) t, accumulator, elems);
+		var filtered = list(filtered(elems, t -> t != null));
+		if (filtered.isEmpty()) {
+			return null;
+		}
+		return reduce(t -> (U) t, accumulator, filtered);
 	}
 
-	public static <T, U> U reduce(Predicate<T> pred, Function<T, U> initializer,
-			BiFunction<U, T, U> accumulator, Iterable<? extends T> elems) {
-		if (pred == null) {
-			pred = s -> true;
-		}
-
+	/**
+	 * Reduces all non-null elements to a single element by means of a given
+	 * initializator (to initialize the result from the first element) and a given
+	 * accumulator (to update the result). <br>
+	 * Compare to {@link Stream#reduce(Object, BinaryOperator)}. The difference is
+	 * that the Stream-version needs an explicit identity element provided and poses
+	 * additional constraint on this element (in order to parallelize correctly). We
+	 * perform the reduction sequentially and can generate the identity in place.
+	 * 
+	 * @param initializer
+	 * @param accumulator
+	 * @param elems
+	 * @return
+	 */
+	public static <T, U> U reduce(Function<T, U> initializer, BiFunction<U, T, U> accumulator,
+			Iterable<? extends T> elems) {
 		// initialize the first element
-		int count = 0;
 		Iterator<? extends T> it = elems.iterator();
 		U result = null;
-		while (true) {
-			if (it.hasNext()) {
-				count++;
-				T elem = it.next();
-				if (pred.test(elem)) {
-					result = initializer.apply(elem);
-					break;
-				}
-			} else {
-				if (count == 0) {
-					error("Cannot pass empty iterable to reduce");
-				} else {
-					error("None of the " + count
-							+ " elements satisfy a given predicate for reduce");
-				}
-			}
+
+		// initialize with the first element
+		if (it.hasNext()) {
+			T elem = it.next();
+			result = initializer.apply(elem);
+		} else {
+			error("Cannot pass empty iterable to reduce");
 		}
 
-		// iterate over the rest
+		// ... iterate over the rest
 		while (it.hasNext()) {
 			T elem = it.next();
-			if (pred.test(elem)) {
-				result = accumulator.apply(result, elem);
-			}
+			result = accumulator.apply(result, elem);
 		}
 
 		return result;

@@ -31,6 +31,8 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import ms.ipp.iterable.BiIterable;
@@ -1090,6 +1092,15 @@ public class Iterables {
 
 	}
 
+	///// ********** Array Converters/Unboxers ************ /////
+	public static List<Double> list(double[] array) {
+		return DoubleStream.of(array).boxed().collect(Collectors.toList());
+	}
+
+	public static List<Integer> list(int[] array) {
+		return IntStream.of(array).boxed().collect(Collectors.toList());
+	}
+
 	///// ************ Miscellaneous Helpers ************** /////
 	/**
 	 * Returns a symmetric difference of two sets, i.e. a set containing elements
@@ -1156,7 +1167,7 @@ public class Iterables {
 	}
 
 	public static <T> Set<T> union(Iterable<? extends Iterable<T>> sequence) {
-		return reduce(null, i -> new HashSet<>(collection(i)), (s, i) -> {
+		return reduce(i -> new HashSet<>(collection(i)), (s, i) -> {
 			s.addAll(collection(i));
 			return s;
 		}, sequence);
