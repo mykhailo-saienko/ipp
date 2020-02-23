@@ -35,6 +35,7 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import ms.ipp.base.KeyValue;
 import ms.ipp.iterable.BiIterable;
 import ms.ipp.iterable.FilteredIterable;
 import ms.ipp.iterable.MappedIterable;
@@ -443,6 +444,20 @@ public class Iterables {
 		return Streams.set(stream(it), pred);
 	}
 
+	public static <T, U> Map<T, U> toHashMap(Iterable<? extends Entry<T, U>> it) {
+		return toHashMap(it, Entry::getKey, Entry::getValue);
+	}
+
+	public static <T, U> Map<T, U> toHashMap(Iterable<? extends U> it,
+			Function<? super U, T> keyGen) {
+		return toHashMap(it, keyGen, Function.identity());
+	}
+
+	public static <T, U, V> Map<T, V> toHashMap(Iterable<? extends U> it,
+			Function<? super U, T> keyGen, Function<? super U, V> valueGen) {
+		return collect(it, null, Collectors.toMap(keyGen, valueGen));
+	}
+
 	/**
 	 * Collects all elements from the {@code Iterable<Entry<T,U>>} a
 	 * {@code Map<T,U>}.
@@ -450,13 +465,8 @@ public class Iterables {
 	 * @param it
 	 * @return
 	 */
-	public static <T, U> Map<T, U> map(Iterable<? extends Entry<T, U>> it) {
-		return collect(it, null, Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-	}
-
-	public static <T, U> Map<T, U> toHashMap(Iterable<? extends U> it,
-			Function<? super U, T> keyGen) {
-		return collect(it, null, Collectors.toMap(keyGen::apply, e -> e));
+	public static <T, U> Map<T, U> toTreeMap(Iterable<? extends Entry<T, U>> it) {
+		return toTreeMap(it, Entry::getKey, Entry::getValue);
 	}
 
 	public static <T, U> TreeMap<T, U> toTreeMap(Iterable<? extends U> it,
@@ -1092,6 +1102,49 @@ public class Iterables {
 
 	}
 
+	public static <T extends Comparable<T>> T min(boolean nullIsMin, T date1, T date2) {
+		if (date1 == null || date2 == null) {
+			if (nullIsMin) {
+				return null;
+			} else {
+				return date1 == null ? date2 : date1;
+			}
+		}
+		return date1.compareTo(date2) < 0 ? date1 : date2;
+	}
+
+	public static <T extends Comparable<T>> T min(boolean nullIsMin, Iterable<T> dates) {
+		return Algorithms.reduce(d -> d, (d1, d2) -> min(nullIsMin, d1, d2), dates);
+	}
+
+	public static <T extends Comparable<T>> T max(boolean nullIsMax, T date1, T date2) {
+		if (date1 == null || date2 == null) {
+			if (nullIsMax) {
+				return null;
+			} else {
+				return date1 == null ? date2 : date1;
+			}
+		}
+		return date1.compareTo(date2) < 0 ? date2 : date1;
+	}
+
+	public static <T extends Comparable<T>> T max(boolean nullIsMax, Iterable<T> dates) {
+		return Algorithms.reduce(d -> d, (d1, d2) -> max(nullIsMax, d1, d2), dates);
+	}
+
+	@SafeVarargs
+	public static <K extends Comparable<K>, V> KeyValue<K, V> minPair(boolean nullIsMin,
+			Function<V, K> transform, V... elems) {
+		assert elems.length > 0 : "There must be at least one element to compare";
+		K key = transform.apply(elems[0]);
+		int index = 0;
+		for (int i = 1; i < elems.length; ++i) {
+			key = min(nullIsMin, key, transform.apply(elems[i]));
+			index = i;
+		}
+		return KeyValue.KVP(key, elems[index]);
+	}
+
 	///// ********** Array Converters/Unboxers ************ /////
 	public static List<Double> list(double[] array) {
 		return DoubleStream.of(array).boxed().collect(Collectors.toList());
@@ -1153,17 +1206,16 @@ public class Iterables {
 	}
 
 	/**
-	 * Returns an intersection of two sets, i.e., a set containing elements
-	 * contained in at least one of the sets {@code s1}, {@code s2}. The original
-	 * sets are left unmodified.
+	 * Returns a union of two sets, i.e., a set containing elements contained in at
+	 * least one of given {@link Iterable}s. The original iterables are left
+	 * unmodified.
 	 * 
-	 * @param s1 one of the original collections, not null
-	 * @param s2 another original collection, not null
+	 * @param iterables an array of given Iterables to compute the union over
 	 * @return
 	 */
 	@SafeVarargs
-	public static <T> Set<T> union(Iterable<T>... elems) {
-		return union(asList(elems));
+	public static <T> Set<T> union(Iterable<T>... iterables) {
+		return union(asList(iterables));
 	}
 
 	public static <T> Set<T> union(Iterable<? extends Iterable<T>> sequence) {
