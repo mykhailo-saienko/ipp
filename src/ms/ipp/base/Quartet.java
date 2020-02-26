@@ -16,7 +16,7 @@ public class Quartet<T1, T2, T3, T4> {
 		this.setT1(t1);
 		this.setT2(t2);
 		this.setT3(t3);
-
+		this.setT4(t4);
 	}
 
 	public T1 getT1() {
