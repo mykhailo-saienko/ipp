@@ -33,7 +33,8 @@ import ms.ipp.iterable.tree.Tree;
  * Then,
  * 
  * <pre>
- * Iterator<Person> it = new NestedIterator<String, Person>(departments.iterator(), s -> getEmployees(s).iterator());
+ * Iterator<Person> it = new NestedIterator<String, Person>(departments.iterator(),
+ * 		s -> getEmployees(s).iterator());
  * </pre>
  * 
  * iterates over all employees in all departments. Again, there is more
@@ -107,7 +108,8 @@ public class NestedIterator<T, U> implements Iterator<U> {
 	 * @param gen
 	 * @return
 	 */
-	public static <T, U> NestedIterator<T, U> iterable(Iterator<T> it, Function<T, ? extends Iterable<U>> gen) {
+	public static <T, U> NestedIterator<T, U> iterable(Iterator<T> it,
+			Function<T, ? extends Iterable<U>> gen) {
 		return new NestedIterator<>(it, t -> gen.apply(t).iterator());
 	}
 
@@ -120,7 +122,7 @@ public class NestedIterator<T, U> implements Iterator<U> {
 	 * @return
 	 */
 	public static <T, U extends Iterable<T>> NestedIterator<U, T> flatten(Iterator<U> source) {
-		return new NestedIterator<>(source, t -> t.iterator());
+		return new NestedIterator<>(source, Iterable::iterator);
 	}
 
 	/**
@@ -152,7 +154,8 @@ public class NestedIterator<T, U> implements Iterator<U> {
 	@Override
 	public void remove() {
 		if (nextSet || leaf == null) {
-			throw new IllegalStateException("remove() can only be called after next() and before hasNext()");
+			throw new IllegalStateException(
+					"remove() can only be called after next() and before hasNext()");
 		}
 		leaf.remove();
 	}
