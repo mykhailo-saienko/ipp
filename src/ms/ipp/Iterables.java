@@ -690,19 +690,21 @@ public class Iterables {
      *                   the element passed, not null
      */
     public static <T> void appendList(StringBuffer buf,
-                                      Collection<? extends T> items,
+                                      Iterable<? extends T> items,
                                       String op,
                                       String cl,
                                       String sep,
                                       BiConsumer<T, StringBuffer> serializer) {
         buf.append(op);
 
+        int added = 0;
         for (T t : items) {
             serializer.accept(t, buf);
             buf.append(sep);
+            added++;
         }
 
-        if (items.size() >= 1) {
+        if (added >= 1) {
             buf.delete(buf.length() - sep.length(), buf.length());
         }
         buf.append(cl);
@@ -723,12 +725,12 @@ public class Iterables {
      *                   the element passed, not null
      * @return
      */
-    public static <T> String appendList(Collection<? extends T> items,
+    public static <T> String appendList(Iterable<? extends T> items,
                                         String op,
                                         String cl,
                                         String sep,
                                         BiConsumer<T, StringBuffer> serializer) {
-        var sb = new StringBuffer(items.size() * 1000);
+        var sb = new StringBuffer(2000);
         appendList(sb, items, op, cl, sep, serializer);
         return sb.toString();
     }
@@ -747,7 +749,7 @@ public class Iterables {
      *                   passed, not null
      * @return
      */
-    public static <T> String appendList(Collection<? extends T> items,
+    public static <T> String appendList(Iterable<? extends T> items,
                                         String op,
                                         String cl,
                                         String sep,
@@ -812,6 +814,14 @@ public class Iterables {
         return totalList.stream().mapToInt(s -> subList.indexOf(s)).toArray();
     }
 
+    public static <U> List<U> subByIndex(List<U> totalList, int[] indexes) {
+        List<U> sublist = new ArrayList<>();
+        for (int i = 0; i < indexes.length; ++i) {
+            sublist.add(totalList.get(indexes[i]));
+        }
+        return sublist;
+    }
+
     ///// ************ Shortcuts for Maps ************** /////
     /**
      * Performs a given action on an element with a given key if such element exists. Is equivalent
@@ -868,6 +878,33 @@ public class Iterables {
         } else {
             return onMiss == null ? null : onMiss.get();
         }
+    }
+
+    /**
+     * Groups an {@link Iterable} into a {@link Map} of Lists of elements grouped by a key provided
+     * by a given generator.<br>
+     * 
+     * <b>NOTE:</b> Values, for which the keyGen returns null, will not be saved in the resulting
+     * Map!
+     * 
+     * @param <K>    the class of the key in the resulting Map.
+     * @param <V>    the class of the input values in the Iterable as well as in the resulting Map.
+     * 
+     * @param source the elements to be grouped.
+     * @param keyGen
+     * @return
+     */
+    public static <K, V, M extends Map<K, List<V>>> M group(Iterable<V> source,
+                                                            Function<V, K> keyGen,
+                                                            Supplier<M> generator) {
+        M result = generator.get();
+        for (V value : source) {
+            K key = keyGen.apply(value);
+            if (key != null) {
+                Iterables.getInsert(key, result).add(value);
+            }
+        }
+        return result;
     }
 
     /**
@@ -1095,34 +1132,46 @@ public class Iterables {
 
     }
 
-    public static <T extends Comparable<T>> T min(boolean nullIsMin, T date1, T date2) {
-        if (date1 == null || date2 == null) {
+    public static <T, U extends Number> double sum(Iterable<? extends T> elems,
+                                                   Function<T, U> converter) {
+        return Algorithms.reduce(converter.andThen(Number::doubleValue),
+                                 (m, p) -> m + converter.apply(p).doubleValue(),
+                                 elems);
+    }
+
+    public static <T, U extends Number> double ave(Collection<? extends T> elems,
+                                                   Function<T, U> converter) {
+        return sum(elems, converter) / elems.size();
+    }
+
+    public static <T extends Comparable<T>> T min(boolean nullIsMin, T value1, T value2) {
+        if (value1 == null || value2 == null) {
             if (nullIsMin) {
                 return null;
             } else {
-                return date1 == null ? date2 : date1;
+                return value1 == null ? value2 : value1;
             }
         }
-        return date1.compareTo(date2) < 0 ? date1 : date2;
+        return value1.compareTo(value2) < 0 ? value1 : value2;
     }
 
-    public static <T extends Comparable<T>> T min(boolean nullIsMin, Iterable<T> dates) {
-        return Algorithms.reduce(d -> d, (d1, d2) -> min(nullIsMin, d1, d2), dates);
+    public static <T extends Comparable<T>> T min(boolean nullIsMin, Iterable<T> values) {
+        return Algorithms.reduce(d -> d, (d1, d2) -> min(nullIsMin, d1, d2), values);
     }
 
-    public static <T extends Comparable<T>> T max(boolean nullIsMax, T date1, T date2) {
-        if (date1 == null || date2 == null) {
+    public static <T extends Comparable<T>> T max(boolean nullIsMax, T value1, T value2) {
+        if (value1 == null || value2 == null) {
             if (nullIsMax) {
                 return null;
             } else {
-                return date1 == null ? date2 : date1;
+                return value1 == null ? value2 : value1;
             }
         }
-        return date1.compareTo(date2) < 0 ? date2 : date1;
+        return value1.compareTo(value2) < 0 ? value2 : value1;
     }
 
-    public static <T extends Comparable<T>> T max(boolean nullIsMax, Iterable<T> dates) {
-        return Algorithms.reduce(d -> d, (d1, d2) -> max(nullIsMax, d1, d2), dates);
+    public static <T extends Comparable<T>> T max(boolean nullIsMax, Iterable<T> values) {
+        return Algorithms.reduce(d -> d, (d1, d2) -> max(nullIsMax, d1, d2), values);
     }
 
     @SafeVarargs
@@ -1140,8 +1189,41 @@ public class Iterables {
     }
 
     ///// ********** Array Converters/Unboxers ************ /////
+    public static double[] arrayDouble(Collection<? extends Number> source) {
+        double[] result = new double[source.size()];
+
+        int i = 0;
+        for (var d : source) {
+            result[i++] = d.doubleValue();
+        }
+        return result;
+    }
+
+    public static int[] arrayInt(Collection<? extends Number> source) {
+        int[] result = new int[source.size()];
+
+        int i = 0;
+        for (var d : source) {
+            result[i++] = d.intValue();
+        }
+        return result;
+    }
+
     public static List<Double> list(double[] array) {
         return DoubleStream.of(array).boxed().collect(Collectors.toList());
+    }
+
+    public static List<List<Double>> list(double[][] matrix) {
+        List<List<Double>> result = new ArrayList<>();
+        for (int i = 0; i < matrix.length; ++i) {
+            double[] row = matrix[i];
+            List<Double> rowList = new ArrayList<>();
+            for (int j = 0; j < row.length; ++j) {
+                rowList.add(row[j]);
+            }
+            result.add(rowList);
+        }
+        return result;
     }
 
     public static List<Integer> list(int[] array) {
@@ -1278,4 +1360,5 @@ public class Iterables {
         arraycopy(arr, 0, result, prefixElems.length, suffixElems.length);
         return result;
     }
+
 }
