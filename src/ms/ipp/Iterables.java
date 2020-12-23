@@ -6,6 +6,7 @@ import static ms.ipp.Algorithms.reduce;
 import static ms.ipp.Algorithms.toKV;
 import static ms.ipp.Streams.stream;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1137,6 +1138,11 @@ public class Iterables {
         return Algorithms.reduce(converter.andThen(Number::doubleValue),
                                  (m, p) -> m + converter.apply(p).doubleValue(),
                                  elems);
+    }
+
+    public static <T> BigDecimal sumBD(Iterable<? extends T> elems,
+                                       Function<T, BigDecimal> converter) {
+        return Algorithms.reduce(converter, (m, p) -> m.add(converter.apply(p)), elems);
     }
 
     public static <T, U extends Number> double ave(Collection<? extends T> elems,
