@@ -33,10 +33,10 @@ public interface Query {
     }
 
     default MergedQuery and(Query... queries) {
-        return new MergedQuery(Type.AND, queries);
+        return new MergedQuery(Type.AND, this).add(queries);
     }
 
     default MergedQuery or(Query... queries) {
-        return new MergedQuery(Type.OR, queries);
+        return new MergedQuery(Type.OR, this).add(queries);
     }
 }

@@ -35,12 +35,8 @@ public class HashIndex<T> implements Index<T> {
     @Override
     public void remove(T value, String id) {
         var set = index.get(value);
-        if (set == null) {
+        if (set == null || !set.remove(id)) { // This should never happen!
             throw new IllegalArgumentException("Index key '" + value + "' for id '" + id
-                                               + "' not found");
-        }
-        if (!set.remove(id)) {
-            throw new IllegalArgumentException("Index id '" + id + "' for key '" + value
                                                + "' not found");
         }
         if (set.isEmpty()) {

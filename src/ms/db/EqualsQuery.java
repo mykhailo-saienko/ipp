@@ -17,4 +17,9 @@ public class EqualsQuery<T> implements Query {
     public String getIndexName() {
         return indexName;
     }
+
+    @Override
+    public String toString() {
+        return indexName + " = " + value;
+    }
 }

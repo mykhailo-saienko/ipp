@@ -39,4 +39,11 @@ public class RangeQuery<T> implements Query {
     public boolean isIncludeLargest() {
         return includeLargest;
     }
+
+    @Override
+    public String toString() {
+        String lower = smallest != null ? smallest + (includeSmallest ? " <= " : " < ") : "";
+        String upper = largest != null ? (includeLargest ? " <= " : " < ") + largest : "";
+        return lower + indexName + upper;
+    }
 }

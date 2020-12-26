@@ -1,6 +1,9 @@
 package ms.db;
 
 import static ms.ipp.Iterables.filter;
+import static ms.ipp.Iterables.intersection;
+import static ms.ipp.Iterables.map;
+import static ms.ipp.Iterables.union;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -36,15 +39,6 @@ public class Table<T> {
         mainIndex = sorted ? new TreeMap<>() : new HashMap<>();
     }
 
-    public static void main(String[] args) {
-        Query q = Query.less("test", "asdf").and(Query.larger("test2", "baf"));
-        Table<Query> t = new Table<>(true);
-        t.addSortedIndex("test", q1 -> q1.toString(), String.class);
-        t.addSortedIndex("test2", q2 -> q2.toString(), String.class);
-        Collection<Query> result = t.query(q);
-        System.out.println(result);
-    }
-
     public T queryById(String id) {
         return mainIndex.get(id);
     }
@@ -69,12 +63,7 @@ public class Table<T> {
     }
 
     public T queryUnique(Query query) {
-        var result = query(query);
-        if (result.size() != 1) {
-            throw new IllegalArgumentException("Expected unique value for query '" + query
-                                               + "' but got " + result.size());
-        }
-        return result.iterator().next();
+        return mainIndex.get(queryUniqueId(query));
     }
 
     public void insert(Map<String, T> values, InsertBehaviour onDuplicate) {
@@ -166,6 +155,10 @@ public class Table<T> {
         valueGenerators.remove(indexName);
     }
 
+    public int size() {
+        return mainIndex.size();
+    }
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // ==================================== PRIVATE MEMBERS ==================================== //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -201,10 +194,7 @@ public class Table<T> {
             throw new IllegalArgumentException("Unknown sorted index '" + query.getIndexName()
                                                + "'");
         }
-        return index.queryIntervalUnsafe(query.getSmallest(),
-                                         query.isIncludeSmallest(),
-                                         query.getLargest(),
-                                         query.isIncludeLargest());
+        return index.queryIntervalUnsafe(query);
     }
 
     private Set<String> queryHash(EqualsQuery<?> query) {
@@ -212,15 +202,15 @@ public class Table<T> {
         if (index == null) {
             throw new IllegalArgumentException("Unknown index '" + query.getIndexName() + "'");
         }
-        return index.queryEqualsUnsafe(query.getValue());
+        return index.queryEqualsUnsafe(query);
     }
 
     private Set<String> queryMerged(MergedQuery query) {
-        var idList = Iterables.map(query.getSubqueries(), this::queryIndex);
+        var idList = map(query.getSubqueries(), this::queryIndex);
         if (query.getType() == Type.AND) {
-            return Iterables.intersection(idList);
+            return intersection(idList);
         } else {
-            return Iterables.union(idList);
+            return union(idList);
         }
     }
 }// Table

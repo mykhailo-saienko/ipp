@@ -1,5 +1,8 @@
 package ms.db;
 
+import static ms.db.IndexHelper.cast;
+import static ms.ipp.Iterables.union;
+
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
@@ -22,14 +25,11 @@ public class SortedIndex<T> implements Index<T> {
         Iterables.getInsert(key, index, HashSet::new).add(id);
     }
 
-    public Set<String> queryIntervalUnsafe(Object smallest,
-                                           boolean includeSmallest,
-                                           Object largest,
-                                           boolean includeLargest) {
-        return queryInterval(getValueClass().cast(smallest),
-                             includeSmallest,
-                             getValueClass().cast(largest),
-                             includeLargest);
+    public Set<String> queryIntervalUnsafe(RangeQuery<?> query) {
+        return queryInterval(cast(query.getIndexName(), query.getSmallest(), getValueClass()),
+                             query.isIncludeSmallest(),
+                             cast(query.getIndexName(), query.getLargest(), getValueClass()),
+                             query.isIncludeLargest());
     }
 
     public Set<String> queryInterval(T smallest,
@@ -48,7 +48,7 @@ public class SortedIndex<T> implements Index<T> {
             includeLargest = true;
         }
         var result = index.subMap(smallest, includeSmallest, largest, includeLargest);
-        return Iterables.union(result.values());
+        return result.isEmpty() ? new HashSet<>() : union(result.values());
     }
 
     @Override
@@ -65,12 +65,8 @@ public class SortedIndex<T> implements Index<T> {
     @Override
     public void remove(T value, String id) {
         var set = index.get(value);
-        if (set == null) {
+        if (set == null || !set.remove(id)) { // this should never happen!
             throw new IllegalArgumentException("Index key '" + value + "' for id '" + id
-                                               + "' not found");
-        }
-        if (!set.remove(id)) {
-            throw new IllegalArgumentException("Index id '" + id + "' for key '" + value
                                                + "' not found");
         }
         if (set.isEmpty()) {
