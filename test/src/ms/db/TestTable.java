@@ -33,7 +33,9 @@ import org.junit.jupiter.api.TestFactory;
 import ms.ipp.base.KeyValue;
 
 public class TestTable {
-
+    // TODO: Idea: Test atomicity on insertion/deletion if generators throw errors
+    // TODO: Idea: Test range-query on non-sorted index. Should it generate Exception or just
+    // execute a slower exhaustive search/filtering?
     @BeforeEach
     public void setUp() {
         t = new Table<>(true); // for sorted, it is easier to test for elements in the query results
