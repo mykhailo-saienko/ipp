@@ -1045,6 +1045,23 @@ public class Iterables {
         return map;
     }
 
+    public static <T, V> Map<T, V> makeMap(Collection<T> keys, Collection<V> values) {
+        if (keys == null || values == null) {
+            throw new IllegalArgumentException("Keys and values must both be not null");
+        }
+        if (keys.size() != values.size()) {
+            throw new IllegalArgumentException("Keys and values must be of the same length! Keys has length "
+                                               + keys.size() + "; values: " + values.size());
+        }
+        var map = new HashMap<T, V>();
+        Iterator<T> kIt = keys.iterator();
+        Iterator<V> vIt = values.iterator();
+        while (kIt.hasNext() && vIt.hasNext()) {
+            map.put(kIt.next(), vIt.next());
+        }
+        return map;
+    }
+
     /**
      * Returns a new (modifiable) {@code HashMap} containing only those entries from the original
      * {@code Map} whose keys match a given pattern.
