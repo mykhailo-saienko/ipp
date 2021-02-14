@@ -566,6 +566,38 @@ public class Iterables {
     }
 
     /**
+     * Applies a given {@link BiFunction} to an {@link Iterable} made by zipping given two Iterables
+     * and returns the newly formed {@link List}.
+     * 
+     * If the two Iterables are not of the same length, the shorter length is taken.
+     * 
+     * If any of the two Iterables or the given mapping function are null, null is returned.
+     * 
+     * @param <T>
+     * @param <U>
+     * @param <V>
+     * @param items1
+     * @param items2
+     * @param map
+     * @return
+     */
+    public static <T, U, V> List<V> bimap(Iterable<T> items1,
+                                          Iterable<U> items2,
+                                          BiFunction<T, U, V> map) {
+        if (items1 == null || items2 == null || map == null) {
+            return null;
+        }
+
+        Iterator<T> it1 = items1.iterator();
+        Iterator<U> it2 = items2.iterator();
+        List<V> results = new ArrayList<>();
+        while (it1.hasNext() && it2.hasNext()) {
+            results.add(map.apply(it1.next(), it2.next()));
+        }
+        return results;
+    }
+
+    /**
      * Returns a {@code List} containing all elements inserted by a given {@code parser} after
      * applying it to every element in a given {@code Collection}. Any exceptions thrown by the
      * {@code parser} are converted to {@link IllegalArgumentException}.
