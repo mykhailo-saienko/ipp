@@ -1403,6 +1403,18 @@ public class Iterables {
         return (Class) new ArrayList<T>().getClass();
     }
 
+    /**
+     * Creates a Class-object corresponding to a Map of generic types {@code T, U}.
+     * 
+     * @param <T>
+     * @param <U>
+     * @return
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static <T, U> Class<Map<T, U>> mapClass() {
+        return (Class) new HashMap<T, U>().getClass();
+    }
+
     @SafeVarargs
     public static <T> T[] merge(boolean swap, T[] arr, T... moreElements) {
         if (moreElements == null || moreElements.length == 0) {
