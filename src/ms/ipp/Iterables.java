@@ -59,7 +59,7 @@ public class Iterables {
     ///////////////////////////////////////////////////////
 
     /**
-     * Returns a {@code BiIterable} which maps all elements from the original {@code BiIterable} by
+     * Returns a {@link BiIterable} which maps all elements from the original {@code BiIterable} by
      * means of a given mapping function.
      * 
      * @param it
@@ -538,6 +538,8 @@ public class Iterables {
      * @return
      */
     public static <T> Iterable<T> toIterable(Supplier<Iterator<T>> it, int chars) {
+        // The reason with don't just use Iterable<T> it = it::get
+        // is because with want to pass on the characteristics.
         Iterable<T> itr = new Iterable<T>() {
             @Override
             public Iterator<T> iterator() {
@@ -1426,6 +1428,30 @@ public class Iterables {
         var result = Arrays.copyOf(prefixElems, arr.length + moreElements.length);
         arraycopy(arr, 0, result, prefixElems.length, suffixElems.length);
         return result;
+    }
+
+    /**
+     * Returns true if and only if both maps have exactly the same keys (using their natural
+     * equals()-method for comparison) and a given predicate returns true when applied to each pair
+     * {@code (one.get(key), two.get(key))} where {@code key} runs over all present keys.
+     * 
+     * @param <K>
+     * @param <V>
+     * @param one
+     * @param two
+     * @param valuePred
+     * @return
+     */
+    public static <K, V> boolean appliesToAll(Map<K, V> one,
+                                              Map<K, V> two,
+                                              BiPredicate<V, V> valuePred) {
+        // compare the keys using equals
+        if (!one.keySet().equals(two.keySet())) {
+            return false;
+        }
+
+        // TODO: Use bimap with valuePred::test (modify bimap to return iterable instead of list).
+        return all(one.keySet(), s -> valuePred.test(one.get(s), two.get(s)));
     }
 
 }

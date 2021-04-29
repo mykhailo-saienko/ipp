@@ -14,7 +14,7 @@ import ms.ipp.iterable.BiIterable;
 public class TestTree {
 	@Test
 	public void testPeeks() {
-		DelegatingTree<Number> entity = createSimpleDE();
+		DelegatingTree<Number> entity = createSimpleDelegatingTree();
 
 		// normal priority-based retrieval
 		Assert.assertEquals(1, entity.peek("a"));
@@ -33,7 +33,7 @@ public class TestTree {
 
 	@Test
 	public void testMembers() {
-		DelegatingTree<Number> entity = createSimpleDE();
+		DelegatingTree<Number> entity = createSimpleDelegatingTree();
 		BiIterable<String, Number> members = entity.members(Number.class);
 		// Implicitly test if DelegatingTree::members(Clazz) produces correct
 		// iterators, as we generate one for count and one for assertIterator
@@ -49,7 +49,7 @@ public class TestTree {
 
 	@Test
 	public void testIllegalSet() {
-		DelegatingTree<Number> entity = createSimpleDE();
+		DelegatingTree<Number> entity = createSimpleDelegatingTree();
 		// Cannot set Strings in a Tree with base class Number
 		Assert.assertEquals(null, entity.set("x", "b"));
 		// Total number of members has not changed
@@ -126,19 +126,19 @@ public class TestTree {
 	 * 
 	 * @return
 	 */
-	private DelegatingTree<Number> createSimpleDE() {
-		DelegatingTree<Number> entity = new DelegatingTree<>(Number.class);
-		entity.add(new StdTree<>(Number.class));
-		entity.add(Integer.class, new StdTree<>(Integer.class));
-		entity.add(Double.class, new StdTree<>(Double.class));
+	private DelegatingTree<Number> createSimpleDelegatingTree() {
+		DelegatingTree<Number> tree = new DelegatingTree<>(Number.class);
+		tree.add(new StdTree<>(Number.class));
+		tree.add(Integer.class, new StdTree<>(Integer.class));
+		tree.add(Double.class, new StdTree<>(Double.class));
 
-		entity.set("a", 1); // not class-specific
-		entity.get(Integer.class).set("a", 1); // class-specific
-		entity.get(Integer.class).set("b", 2);
-		entity.get(Double.class).set("a", 3.0);
-		entity.get(Double.class).set("b", 4.0);
-		entity.get(Double.class).set("c", 5.0);
-		return entity;
+		tree.set("a", 1); // not class-specific
+		tree.get(Integer.class).set("a", 1); // class-specific
+		tree.get(Integer.class).set("b", 2);
+		tree.get(Double.class).set("a", 3.0);
+		tree.get(Double.class).set("b", 4.0);
+		tree.get(Double.class).set("c", 5.0);
+		return tree;
 	}
 
 	private static interface TestInterface {
