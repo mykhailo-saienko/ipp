@@ -1342,6 +1342,16 @@ public class Iterables {
         }, sorted);
     }
 
+    /**
+     * Efficiently converts a given {@link Iterable} into a {@link Collection}.
+     * 
+     * If an Iterable is already a Collection, returns the upcasted argument. If it is not a
+     * Collection, creates a new list from the argument and returns the former.
+     * 
+     * @param <T>
+     * @param source
+     * @return
+     */
     public static <T> Collection<T> collection(Iterable<T> source) {
         if (source instanceof Collection) {
             return (Collection<T>) source;
